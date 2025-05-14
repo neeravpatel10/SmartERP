@@ -4,14 +4,18 @@ exports.rolloverBatch = exports.deleteBatch = exports.getBatchStudents = exports
 const index_1 = require("../index");
 const createBatch = async (req, res) => {
     try {
-        const { name, departmentId, currentSemester, autoRollover, archived, academicYear } = req.body;
+        const { departmentId, currentSemester, autoRollover, archived, academicYear } = req.body;
         // Validate academicYear format
-        if (!academicYear || !/^\d{4}-\d{4}$/.test(academicYear)) {
+        if (!academicYear || !/^[0-9]{4}-[0-9]{4}$/.test(academicYear)) {
             return res.status(400).json({
                 success: false,
                 message: 'Academic year must be in format YYYY-YYYY'
             });
         }
+        // Get year from academicYear
+        const year = academicYear.split('-')[0];
+        const batchId = year;
+        const name = `${year} Batch`;
         // Check if department exists
         const department = await index_1.prisma.department.findUnique({
             where: { id: departmentId }
@@ -25,7 +29,7 @@ const createBatch = async (req, res) => {
         // Check if batch already exists for the department and academic year
         const existingBatch = await index_1.prisma.batch.findFirst({
             where: {
-                name,
+                id: batchId,
                 departmentId,
                 academicYear
             }
@@ -33,12 +37,13 @@ const createBatch = async (req, res) => {
         if (existingBatch) {
             return res.status(400).json({
                 success: false,
-                message: 'Batch with this name and academic year already exists for this department'
+                message: 'Batch for this year and department already exists'
             });
         }
         // Create batch
         const batch = await index_1.prisma.batch.create({
             data: {
+                id: batchId,
                 name,
                 departmentId,
                 currentSemester: currentSemester !== null && currentSemester !== void 0 ? currentSemester : 1,

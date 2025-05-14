@@ -23,42 +23,42 @@ import {
   DialogContent,
   DialogActions,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import Autocomplete from '@mui/material/Autocomplete';
+import { debounce } from '../../utils/helpers';
 
 interface Department {
   id: number;
   code: string;
   name: string;
   hodName?: string;
+  hodId?:string;
   createdAt: string;
-  head?: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
+  head:Head; 
 }
 
 interface Faculty {
   id: number;
   firstName: string;
   lastName: string;
+  name: string;
   email: string;
 }
 
 interface DepartmentFormData {
   name: string;
   code: string;
-  headId: number | '';
+  headId: string | '';
 }
 
+interface Head{
+  id:string;
+  name: string;
+  email:string;
+}
 const initialFormData: DepartmentFormData = {
   name: '',
   code: '',
@@ -70,7 +70,6 @@ const Departments: React.FC = () => {
   const { token } = useAuth();
   
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [faculty, setFaculty] = useState<Faculty[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -83,6 +82,8 @@ const Departments: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
+  const [departmentFaculty, setDepartmentFaculty] = useState<Faculty[]>([]);
+  const [facultyLoading, setFacultyLoading] = useState(false);
 
   // Wrap fetchDepartments in useCallback
   const fetchDepartments = useCallback(async () => {
@@ -90,7 +91,7 @@ const Departments: React.FC = () => {
     setError(null);
     
     try {
-      const response = await api.get('/api/departments', {
+      const response = await api.getCached('/departments', {
         headers: { Authorization: `Bearer ${token}` },
         params: { search: searchTerm }
       });
@@ -106,25 +107,56 @@ const Departments: React.FC = () => {
     }
   }, [searchTerm, token]);
 
-  // Wrap fetchFaculty in useCallback
-  const fetchFaculty = useCallback(async () => {
+  // Create a debounced search function
+  const debouncedSearch = useCallback(() => {
+    const debouncedFn = debounce(() => {
+      fetchDepartments();
+    }, 500);
+    
+    debouncedFn();
+  }, [fetchDepartments]);
+
+  // Fetch faculty for a department
+  const fetchDepartmentFaculty = useCallback(async (departmentId: number) => {
+    setFacultyLoading(true);
     try {
-      const response = await api.get('/api/faculty', {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await api.get('/faculty', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { departmentId }
       });
-      
       if (response.data.success) {
-        setFaculty(response.data.data.faculty);
+        setDepartmentFaculty(response.data.data.faculty);
       }
     } catch (err) {
-      console.error('Error fetching faculty:', err);
+      setDepartmentFaculty([]);
+    } finally {
+      setFacultyLoading(false);
     }
   }, [token]);
 
   useEffect(() => {
     fetchDepartments();
-    fetchFaculty();
-  }, [fetchDepartments, fetchFaculty]);
+  }, [fetchDepartments]);
+
+  // When search term changes, use the debounced search
+  useEffect(() => {
+    debouncedSearch();
+  }, [searchTerm, debouncedSearch]);
+
+  // When editing or adding, fetch faculty for the department
+  useEffect(() => {
+    if (dialogOpen) {
+      // If editing, use the department being edited
+      const deptId = isEditing && currentDepartmentId
+        ? currentDepartmentId
+        : null;
+      if (deptId) {
+        fetchDepartmentFaculty(deptId);
+      } else {
+        setDepartmentFaculty([]);
+      }
+    }
+  }, [dialogOpen, isEditing, currentDepartmentId, fetchDepartmentFaculty]);
 
   const handleFormChange = (field: keyof DepartmentFormData, value: string | number) => {
     setFormData(prev => ({
@@ -196,7 +228,7 @@ const Departments: React.FC = () => {
           {
             name: formData.name,
             code: formData.code,
-            headId: formData.headId || undefined
+            hodId: formData.headId || undefined
           }
         );
         
@@ -211,7 +243,7 @@ const Departments: React.FC = () => {
           {
             name: formData.name,
             code: formData.code,
-            headId: formData.headId || undefined
+            hodId: formData.headId || undefined
           }
         );
         
@@ -271,7 +303,6 @@ const Departments: React.FC = () => {
           value={searchTerm}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setSearchTerm(e.target.value);
-            fetchDepartments();
           }}
           placeholder="Search by department name or code..."
         />
@@ -282,7 +313,7 @@ const Departments: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ maxHeight: '500px', overflow: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -307,7 +338,7 @@ const Departments: React.FC = () => {
                     <TableCell>{department.name}</TableCell>
                     <TableCell>
                       {department.head ? (
-                        `${department.head.firstName} ${department.head.lastName}`
+                        `${department.head.name || ''} `.trim()
                       ) : (
                         <Chip label="Not Assigned" size="small" color="warning" />
                       )}
@@ -383,22 +414,23 @@ const Departments: React.FC = () => {
               </Grid>
               
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Head of Department</InputLabel>
-                  <Select
-                    value={formData.headId}
-                    label="Head of Department"
-                    onChange={(e: { target: { value: unknown } }) => handleFormChange('headId', e.target.value as string)}
-                    disabled={submitting}
-                  >
-                    <MenuItem value="">None</MenuItem>
-                    {faculty.map((f) => (
-                      <MenuItem key={f.id} value={f.id}>
-                        {f.firstName} {f.lastName} ({f.email})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Autocomplete
+                  options={departmentFaculty}
+                  getOptionLabel={(option) => `${option.firstName} ${option.lastName} (${option.email})`}
+                  loading={facultyLoading}
+                  value={departmentFaculty.find(f => String(f.id) === formData.headId) || null}
+                  onChange={(_e, newValue) => handleFormChange('headId', newValue ? newValue.id : '')}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Head of Department"
+                      placeholder="Search faculty by name or email"
+                      fullWidth
+                      disabled={facultyLoading || submitting}
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
               </Grid>
             </Grid>
           </Box>

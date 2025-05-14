@@ -19,4 +19,14 @@ module.exports = function override(config, env) {
   config.resolve.extensionAlias['.js'] = ['.js', '.jsx', '.ts', '.tsx'];
 
   return config;
+};
+
+// Add devServer configuration
+module.exports.devServer = function(configFunction) {
+  return function(proxy, allowedHost) {
+    const config = configFunction(proxy, allowedHost);
+    // Change allowedHosts to allow all hosts
+    config.allowedHosts = 'all';
+    return config;
+  };
 }; 

@@ -32,15 +32,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import axios from 'axios';
+import api from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface FacultySubjectMapping {
   id: number;
   faculty: {
     id: number;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
     department?: {
       id: number;
@@ -99,7 +98,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
   onMappingChange,
   initialFilters = {}
 }) => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [mappings, setMappings] = useState<FacultySubjectMapping[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -157,9 +156,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
       if (filters.status) queryParams.append('status', filters.status);
       if (departmentId) queryParams.append('departmentId', departmentId.toString());
       
-      const response = await axios.get(`/api/subjects/faculty-mapping?${queryParams.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get(`/subjects/faculty-mapping?${queryParams.toString()}`);
       
       if (response.data.success) {
         setMappings(response.data.data);
@@ -169,14 +166,13 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [token, departmentId, filters.facultyId, filters.subjectId, filters.semester, filters.section, filters.academicYear, filters.componentScope, filters.active, filters.status]);
+  }, [departmentId, filters]);
 
   // Wrap fetchReferenceData in useCallback
   const fetchReferenceData = useCallback(async () => {
     try {
       // Fetch faculties
-      const facultiesResponse = await axios.get('/api/faculty', {
-        headers: { Authorization: `Bearer ${token}` },
+      const facultiesResponse = await api.get('/faculty', {
         params: departmentId ? { departmentId } : {}
       });
       
@@ -185,8 +181,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
       }
       
       // Fetch subjects
-      const subjectsResponse = await axios.get('/api/subjects', {
-        headers: { Authorization: `Bearer ${token}` },
+      const subjectsResponse = await api.get('/subjects', {
         params: departmentId ? { departmentId } : {}
       });
       
@@ -196,7 +191,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
     } catch (error) {
       console.error('Error fetching reference data:', error);
     }
-  }, [token, departmentId]);
+  }, [departmentId]);
 
   // Load data on mount and when filters change
   useEffect(() => {
@@ -229,9 +224,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
     if (!currentMapping) return;
     
     try {
-      const response = await axios.put(`/api/subjects/faculty-mapping/${currentMapping.id}`, editData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.put(`/subjects/faculty-mapping/${currentMapping.id}`, editData);
       
       if (response.data.success) {
         fetchMappings();
@@ -249,9 +242,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
     if (!window.confirm('Are you sure you want to deactivate this mapping?')) return;
     
     try {
-      const response = await axios.delete(`/api/subjects/faculty-mapping/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.delete(`/subjects/faculty-mapping/${id}`);
       
       if (response.data.success) {
         fetchMappings();
@@ -281,10 +272,9 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
         rejectionReason: approvalAction === 'reject' ? rejectionReason : undefined
       };
       
-      const response = await axios.put(
-        `/api/subjects/faculty-mapping/${currentMapping.id}/approval`, 
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.put(
+        `/subjects/faculty-mapping/${currentMapping.id}/approval`, 
+        payload
       );
       
       if (response.data.success) {
@@ -318,7 +308,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
             <MenuItem value="">All Faculties</MenuItem>
             {faculties.map((faculty: any) => (
               <MenuItem key={faculty.id} value={faculty.id.toString()}>
-                {faculty.firstName} {faculty.lastName}
+                {faculty.name}
               </MenuItem>
             ))}
           </Select>
@@ -480,7 +470,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
               mappings.map((mapping) => (
                 <TableRow key={mapping.id}>
                   <TableCell>
-                    {mapping.faculty.firstName} {mapping.faculty.lastName}
+                    {mapping.faculty.name}
                   </TableCell>
                   <TableCell>
                     {mapping.subject.code} - {mapping.subject.name}
@@ -569,7 +559,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
           {currentMapping && (
             <Box sx={{ pt: 2 }}>
               <Typography variant="subtitle1">
-                Faculty: {currentMapping.faculty.firstName} {currentMapping.faculty.lastName}
+                Faculty: {currentMapping.faculty.name}
               </Typography>
               <Typography variant="subtitle1">
                 Subject: {currentMapping.subject.code} - {currentMapping.subject.name}
@@ -630,7 +620,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
           {currentMapping && (
             <Box sx={{ pt: 1 }}>
               <Typography variant="body1" gutterBottom>
-                <strong>Faculty:</strong> {currentMapping.faculty.firstName} {currentMapping.faculty.lastName}
+                <strong>Faculty:</strong> {currentMapping.faculty.name}
               </Typography>
               <Typography variant="body1" gutterBottom>
                 <strong>Subject:</strong> {currentMapping.subject.code} - {currentMapping.subject.name}

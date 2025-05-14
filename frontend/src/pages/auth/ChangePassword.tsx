@@ -1,13 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { changePassword, resetError } from '../../store/slices/authSlice';
+import { changePassword, resetError, updateUserFirstLogin } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
 
 const ChangePassword: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { loading, error, user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [passwordChanged, setPasswordChanged] = useState(false);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Redirect to dashboard if not first login or password was changed
+  useEffect(() => {
+    if (user && (!user.firstLogin || passwordChanged)) {
+      navigate('/dashboard');
+    }
+  }, [user, passwordChanged, navigate]);
 
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -103,8 +118,10 @@ const ChangePassword: React.FC = () => {
       );
       
       if (changePassword.fulfilled.match(resultAction)) {
-        // Password changed successfully
-        navigate('/dashboard');
+        // Update local state to trigger redirect
+        setPasswordChanged(true);
+        // Update user state
+        dispatch(updateUserFirstLogin(false));
       }
     } catch (err) {
       // Error handling is done in the reducer

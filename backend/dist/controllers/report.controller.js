@@ -2,37 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getFacultySubjectReport = void 0;
 const index_1 = require("../index");
-// Define custom error classes since import is failing
-class ApiError extends Error {
-    constructor(message, statusCode = 500) {
-        super(message);
-        this.statusCode = statusCode;
-        this.name = this.constructor.name;
-        Error.captureStackTrace(this, this.constructor);
-    }
-}
-class BadRequestError extends ApiError {
-    constructor(message = 'Bad request') {
-        super(message, 400);
-    }
-}
-class NotFoundError extends ApiError {
-    constructor(message = 'Resource not found') {
-        super(message, 404);
-    }
-}
-// Define helper functions since import is failing
-const calculateAttendancePercentage = (present, total) => {
-    if (total === 0)
-        return 0;
-    return Math.round((present / total) * 100 * 100) / 100;
-};
+const errors_1 = require("../utils/errors");
+const helpers_1 = require("../utils/helpers");
 // Get faculty subject report
 const getFacultySubjectReport = async (req, res) => {
     try {
         const { facultyId, subjectId } = req.params;
         if (!facultyId || !subjectId) {
-            throw new BadRequestError('Faculty ID and Subject ID are required');
+            throw new errors_1.BadRequestError('Faculty ID and Subject ID are required');
         }
         // Get faculty and subject details
         const faculty = await index_1.prisma.user.findUnique({
@@ -55,10 +32,10 @@ const getFacultySubjectReport = async (req, res) => {
             },
         });
         if (!faculty) {
-            throw new NotFoundError('Faculty not found');
+            throw new errors_1.NotFoundError('Faculty not found');
         }
         if (!subject) {
-            throw new NotFoundError('Subject not found');
+            throw new errors_1.NotFoundError('Subject not found');
         }
         // Get all students for this subject and semester
         // Note: Using Mark model as a proxy for enrollment since there's no studentSubject model
@@ -111,7 +88,7 @@ const getFacultySubjectReport = async (req, res) => {
             // Calculate attendance
             const studentAttendances = attendanceSessions.flatMap((record) => record.entries.filter((sa) => sa.usn === student.usn));
             const attendedClasses = studentAttendances.filter((sa) => sa.status === 'Present').length;
-            const attendancePercentage = calculateAttendancePercentage(attendedClasses, totalClasses);
+            const attendancePercentage = (0, helpers_1.calculateAttendancePercentage)(attendedClasses, totalClasses);
             // Calculate marks
             const componentMarks = examComponents.map((component) => {
                 var _a;
@@ -204,7 +181,7 @@ const getFacultySubjectReport = async (req, res) => {
         });
     }
     catch (error) {
-        if (error instanceof ApiError) {
+        if (error instanceof errors_1.ApiError) {
             return res.status(error.statusCode).json({ message: error.message });
         }
         console.error('Error in getFacultySubjectReport:', error instanceof Error ? error.message : 'Unknown error');

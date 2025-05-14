@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../utils/api';
 import {
   Container,
   Typography,
@@ -59,7 +59,6 @@ interface FormErrors {
 
 const CreateAttendanceSession: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -88,33 +87,28 @@ const CreateAttendanceSession: React.FC = () => {
   // Fetch subjects, batches, and faculties
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        // Fetch subjects
-        const subjectsResponse = await axios.get('/api/subjects');
+        const [subjectsResponse, batchesResponse, facultiesResponse] = await Promise.all([
+          api.get('/subjects'),
+          api.get('/batches'),
+          api.get('/faculty')
+        ]);
+
         if (subjectsResponse.data.success) {
-          setSubjects(subjectsResponse.data.data.subjects);
+          setSubjects(subjectsResponse.data.data);
         }
-        
-        // Fetch batches
-        const batchesResponse = await axios.get('/api/batches');
         if (batchesResponse.data.success) {
-          setBatches(batchesResponse.data.data.batches);
+          setBatches(batchesResponse.data.data);
         }
-        
-        // Fetch faculties
-        const facultiesResponse = await axios.get('/api/faculties');
         if (facultiesResponse.data.success) {
-          setFaculties(facultiesResponse.data.data.faculties);
+          setFaculties(facultiesResponse.data.data);
         }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError('Failed to load required data. Please try again.');
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load required data');
       }
     };
-    
+
     fetchData();
   }, []);
   
@@ -134,118 +128,24 @@ const CreateAttendanceSession: React.FC = () => {
     }
   };
   
-  const validateForm = (): boolean => {
-    const errors: FormErrors = {};
-    let isValid = true;
-    
-    // Required fields
-    if (!formData.subjectId) {
-      errors.subjectId = 'Subject is required';
-      isValid = false;
-    }
-    
-    if (!formData.attendanceDate) {
-      errors.attendanceDate = 'Date is required';
-      isValid = false;
-    }
-    
-    if (!formData.sessionSlot) {
-      errors.sessionSlot = 'Session slot is required';
-      isValid = false;
-    } else if (parseInt(formData.sessionSlot) < 1) {
-      errors.sessionSlot = 'Session slot must be at least 1';
-      isValid = false;
-    }
-    
-    if (!formData.duration) {
-      errors.duration = 'Duration is required';
-      isValid = false;
-    } else if (parseInt(formData.duration) < 1 || parseInt(formData.duration) > 5) {
-      errors.duration = 'Duration must be between 1 and 5 hours';
-      isValid = false;
-    }
-    
-    if (!formData.academicYear) {
-      errors.academicYear = 'Academic year is required';
-      isValid = false;
-    } else if (!/^\d{4}-\d{4}$/.test(formData.academicYear)) {
-      errors.academicYear = 'Academic year must be in format YYYY-YYYY';
-      isValid = false;
-    }
-    
-    if (!formData.semester) {
-      errors.semester = 'Semester is required';
-      isValid = false;
-    } else if (parseInt(formData.semester) < 1 || parseInt(formData.semester) > 8) {
-      errors.semester = 'Semester must be between 1 and 8';
-      isValid = false;
-    }
-    
-    if (!formData.batchId) {
-      errors.batchId = 'Batch is required';
-      isValid = false;
-    }
-    
-    setFormErrors(errors);
-    return isValid;
-  };
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
     setSubmitting(true);
-    
+    setError(null);
+
     try {
-      // Prepare data for API
-      const payload = {
-        subjectId: parseInt(formData.subjectId),
-        facultyId: formData.facultyId ? parseInt(formData.facultyId) : undefined,
-        attendanceDate: formData.attendanceDate,
-        sessionSlot: parseInt(formData.sessionSlot),
-        duration: parseInt(formData.duration),
-        academicYear: formData.academicYear,
-        semester: parseInt(formData.semester),
-        section: formData.section || undefined,
-        batchId: formData.batchId ? parseInt(formData.batchId) : undefined,
-      };
-      
-      const response = await axios.post('/api/attendance/sessions', payload);
+      const response = await api.post('/attendance/sessions', formData);
       
       if (response.data.success) {
-        // Redirect to session detail page or back to list
-        navigate(`/attendance/sessions/${response.data.data.id}`);
-      } else {
-        setFormErrors({
-          general: response.data.message || 'Failed to create attendance session',
-        });
+        navigate('/attendance');
       }
-    } catch (error: any) {
-      console.error('Error creating attendance session:', error);
-      const errorMessage = error.response?.data?.message || 'An error occurred while creating the attendance session';
-      setFormErrors({
-        general: errorMessage,
-      });
+    } catch (err: any) {
+      console.error('Error creating attendance session:', err);
+      setError(err.response?.data?.message || 'Failed to create attendance session');
     } finally {
       setSubmitting(false);
     }
   };
-  
-  if (loading) {
-    return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#b50900] mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
-          </div>
-        </div>
-      </Container>
-    );
-  }
   
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>

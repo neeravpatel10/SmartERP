@@ -139,6 +139,18 @@ export const subjectSchema = z.object({
   categoryId: z.number()
     .int('Category ID must be an integer')
     .positive('Category ID must be positive')
+    .optional(),
+  schemeYear: z.number()
+    .int('Scheme year must be an integer')
+    .min(2000, 'Scheme year must be at least 2000')
+    .max(2100, 'Scheme year must be at most 2100'),
+  section: z.string()
+    .min(1, 'Section is required')
+    .max(10, 'Section must be less than 10 characters')
+    .optional(),
+  sectionId: z.number()
+    .int('Section ID must be an integer')
+    .positive('Section ID must be positive')
     .optional()
 });
 
@@ -170,7 +182,16 @@ export const updateSubjectSchema = z.object({
   categoryId: z.number()
     .int('Category ID must be an integer')
     .positive('Category ID must be positive')
-    .optional().nullable()
+    .optional().nullable(),
+  schemeYear: z.number()
+    .int('Scheme year must be an integer')
+    .min(2000, 'Scheme year must be at least 2000')
+    .max(2100, 'Scheme year must be at most 2100')
+    .optional(),
+  section: z.string()
+    .min(1, 'Section is required')
+    .max(10, 'Section must be less than 10 characters')
+    .optional()
 });
 
 // Faculty-Subject Mapping schema

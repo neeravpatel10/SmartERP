@@ -55,9 +55,9 @@ const FacultyForm: React.FC<FacultyFormProps> = ({ mode }) => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await api.get('/api/departments');
+        const response = await api.get('/departments');
         if (response.data.success) {
-          setDepartments(response.data.data);
+          setDepartments(response.data.data.departments);
         }
       } catch (err) {
         console.error('Error fetching departments:', err);
@@ -73,7 +73,7 @@ const FacultyForm: React.FC<FacultyFormProps> = ({ mode }) => {
       if (mode === 'edit' && id) {
         setLoading(true);
         try {
-          const response = await api.get(`/api/faculty/${id}`);
+          const response = await api.get(`/faculty/${id}`);
           if (response.data.success) {
             setFacultyData(response.data.data);
           } else {
@@ -97,7 +97,7 @@ const FacultyForm: React.FC<FacultyFormProps> = ({ mode }) => {
     setError(null);
 
     try {
-      const endpoint = mode === 'edit' ? `/api/faculty/${id}` : '/api/faculty';
+      const endpoint = mode === 'edit' ? `/faculty/${id}` : '/faculty';
       const method = mode === 'edit' ? 'put' : 'post';
       
       const response = await api({

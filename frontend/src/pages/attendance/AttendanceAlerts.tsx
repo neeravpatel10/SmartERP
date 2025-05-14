@@ -33,7 +33,7 @@ const AttendanceAlertsPage: React.FC = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get('/api/subjects', {
+        const response = await axios.get('/subjects', {
           headers: { Authorization: `Bearer ${token}` }
         });
         

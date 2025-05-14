@@ -19,4 +19,8 @@ router.post('/', auth_1.authenticate, auth_1.isSuperAdmin, (0, validation_1.vali
 router.put('/:id', auth_1.authenticate, auth_1.isSuperAdmin, (0, validation_1.validate)(validation_1.updateDepartmentSchema), (0, auditMiddleware_1.captureEntityState)('department', (req) => req.params.id, async (id) => await index_1.prisma.department.findUnique({
     where: { id: parseInt(id) }
 })), (0, auditMiddleware_1.setAuditContext)('update', 'department', (req) => req.params.id), department_controller_1.updateDepartment, auditMiddleware_1.logAudit);
+// Delete department - audit this action (super admin only)
+router.delete('/:id', auth_1.authenticate, auth_1.isSuperAdmin, (0, auditMiddleware_1.captureEntityState)('department', (req) => req.params.id, async (id) => await index_1.prisma.department.findUnique({
+    where: { id: parseInt(id) }
+})), (0, auditMiddleware_1.setAuditContext)('delete', 'department', (req) => req.params.id), department_controller_1.deleteDepartment, auditMiddleware_1.logAudit);
 exports.default = router;

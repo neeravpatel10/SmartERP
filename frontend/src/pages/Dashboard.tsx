@@ -13,7 +13,6 @@ import {
   ListItem,
   ListItemText,
   Divider,
-  Button,
   Alert,
   Tabs,
   Tab,
@@ -27,7 +26,6 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import ClassIcon from '@mui/icons-material/Class';
 import PeopleIcon from '@mui/icons-material/People';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import TimelineIcon from '@mui/icons-material/Timeline';
 import EventIcon from '@mui/icons-material/Event';
 
 const Dashboard: React.FC = () => {
@@ -81,7 +79,7 @@ const Dashboard: React.FC = () => {
         setError(null);
         
         // Fetch combined dashboard data from the backend
-        const response = await axios.get('/api/dashboard');
+        const response = await axios.get('/dashboard');
         
         // Log the exact data received from the backend
         console.log('[Dashboard] Response Data:', response.data);
@@ -193,7 +191,6 @@ const Dashboard: React.FC = () => {
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="dashboard tabs">
                 <Tab label="Recent Attendance" />
                 <Tab label="Recent Marks" />
-                <Tab label="Reports" />
               </Tabs>
               <Box p={3}>
                 {tabValue === 0 && (
@@ -246,64 +243,6 @@ const Dashboard: React.FC = () => {
                       </Typography>
                     )}
                   </List>
-                )}
-                {tabValue === 2 && (
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Card>
-                        <CardContent>
-                          <Box display="flex" alignItems="center" mb={2}>
-                            <AssessmentIcon color="primary" />
-                            <Typography variant="h6" ml={1}>Attendance Reports</Typography>
-                          </Box>
-                          <Button 
-                            variant="outlined" 
-                            fullWidth 
-                            component={RouterLink} 
-                            to="/reports/attendance"
-                          >
-                            View Reports
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Card>
-                        <CardContent>
-                          <Box display="flex" alignItems="center" mb={2}>
-                            <TimelineIcon color="secondary" />
-                            <Typography variant="h6" ml={1}>Marks Analysis</Typography>
-                          </Box>
-                          <Button 
-                            variant="outlined" 
-                            fullWidth 
-                            component={RouterLink} 
-                            to="/reports/marks"
-                          >
-                            View Reports
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Card>
-                        <CardContent>
-                          <Box display="flex" alignItems="center" mb={2}>
-                            <EventIcon style={{ color: '#4caf50' }} />
-                            <Typography variant="h6" ml={1}>Semester Reports</Typography>
-                          </Box>
-                          <Button 
-                            variant="outlined" 
-                            fullWidth 
-                            component={RouterLink} 
-                            to="/reports/semester"
-                          >
-                            View Reports
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  </Grid>
                 )}
               </Box>
             </Paper>

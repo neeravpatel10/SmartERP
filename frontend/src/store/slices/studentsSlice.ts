@@ -5,20 +5,25 @@ import { RootState } from '..';
 // Types
 export interface Student {
   usn: string;
-  name: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
   email: string;
-  phone: string;
-  departmentId: string;
-  batchId: string;
+  phone?: string;
   semester: number;
+  section: string;
   department?: {
-    id: string;
+    id: number;
     name: string;
+    code: string;
   };
   batch?: {
     id: string;
     name: string;
+    academicYear: string;
   };
+  departmentId: number;
+  batchId: string;
 }
 
 interface StudentsState {

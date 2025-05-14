@@ -101,10 +101,10 @@ const Components: React.FC = () => {
       
       try {
         const [mappingsRes, componentsRes] = await Promise.all([
-          api.get('/api/subjects/faculty-mapping', {
+          api.get('/subjects/faculty-mapping', {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          api.get('/api/marks/exam-components', {
+          api.get('/marks/exam-components', {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
@@ -228,7 +228,7 @@ const Components: React.FC = () => {
       } else {
         // Create new component
         const response = await api.post(
-          '/api/marks/exam-components',
+          '/marks/exam-components',
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -237,7 +237,7 @@ const Components: React.FC = () => {
           setSuccess('Component created successfully');
           
           // Refresh components list
-          const componentsRes = await api.get('/api/marks/exam-components', {
+          const componentsRes = await api.get('/marks/exam-components', {
             headers: { Authorization: `Bearer ${token}` }
           });
           

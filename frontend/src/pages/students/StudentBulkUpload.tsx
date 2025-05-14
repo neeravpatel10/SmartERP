@@ -92,7 +92,7 @@ const StudentBulkUpload: React.FC = () => {
   
   const downloadTemplate = async () => {
     try {
-      const response = await axios.get('/api/students/template', {
+      const response = await axios.get('/students/template', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },

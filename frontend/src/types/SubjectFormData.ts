@@ -7,4 +7,7 @@ export interface SubjectFormData {
   departmentId: number;
   categoryId?: number | null;
   status?: 'draft' | 'active' | 'locked' | 'archived';
+  schemeYear?: number;
+  section?: string;
+  sectionId?: number;
 } 

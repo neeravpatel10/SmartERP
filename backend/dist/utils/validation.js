@@ -131,6 +131,18 @@ exports.subjectSchema = zod_1.z.object({
     categoryId: zod_1.z.number()
         .int('Category ID must be an integer')
         .positive('Category ID must be positive')
+        .optional(),
+    schemeYear: zod_1.z.number()
+        .int('Scheme year must be an integer')
+        .min(2000, 'Scheme year must be at least 2000')
+        .max(2100, 'Scheme year must be at most 2100'),
+    section: zod_1.z.string()
+        .min(1, 'Section is required')
+        .max(10, 'Section must be less than 10 characters')
+        .optional(),
+    sectionId: zod_1.z.number()
+        .int('Section ID must be an integer')
+        .positive('Section ID must be positive')
         .optional()
 });
 // Subject update schema
@@ -161,7 +173,16 @@ exports.updateSubjectSchema = zod_1.z.object({
     categoryId: zod_1.z.number()
         .int('Category ID must be an integer')
         .positive('Category ID must be positive')
-        .optional().nullable()
+        .optional().nullable(),
+    schemeYear: zod_1.z.number()
+        .int('Scheme year must be an integer')
+        .min(2000, 'Scheme year must be at least 2000')
+        .max(2100, 'Scheme year must be at most 2100')
+        .optional(),
+    section: zod_1.z.string()
+        .min(1, 'Section is required')
+        .max(10, 'Section must be less than 10 characters')
+        .optional()
 });
 // Faculty-Subject Mapping schema
 exports.facultySubjectMappingSchema = zod_1.z.object({

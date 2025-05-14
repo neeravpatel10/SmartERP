@@ -82,7 +82,7 @@ const Attendance: React.FC = () => {
       if (filters.section) params.append('section', filters.section);
       if (filters.batchId) params.append('batchId', filters.batchId);
       
-      const response = await axios.get(`/api/attendance/sessions?${params.toString()}`);
+      const response = await axios.get(`/attendance/sessions?${params.toString()}`);
       
       if (response.data.success) {
         setSessions(response.data.data.attendanceSessions);

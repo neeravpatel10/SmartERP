@@ -51,7 +51,7 @@ const MarkEntry: React.FC = () => {
       setError(null);
       
       try {
-        const response = await api.get('/api/subjects/faculty-mapping', {
+        const response = await api.get('/subjects/faculty-mapping', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -72,7 +72,7 @@ const MarkEntry: React.FC = () => {
     };
     
     fetchSubjects();
-  }, []);
+  }, [token]);
 
   // Fetch components when subject changes
   useEffect(() => {

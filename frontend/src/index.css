@@ -37,4 +37,14 @@ code {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Add Bootstrap compatibility fix */
+:root {
+  --bs-body-font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+  --bs-body-font-size: var(--font-size, 1rem);
+  --bs-body-font-weight: var(--font-weight, 400);
+  --bs-body-line-height: var(--line-height, 1.5);
+  --bs-body-color: var(--text-color, #212529);
+  --bs-body-bg: var(--bg-color, #fff);
 } 

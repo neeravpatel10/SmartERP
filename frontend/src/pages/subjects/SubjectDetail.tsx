@@ -43,7 +43,7 @@ const SubjectDetail: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await api.get(`/api/subjects/${id}`);
+        const response = await api.get(`/subjects/${id}`);
         
         if (response.data.success) {
           setSubject(response.data.data);
@@ -83,8 +83,8 @@ const SubjectDetail: React.FC = () => {
       setError(null);
 
       const response = isCreateMode
-        ? await api.post('/api/subjects', subject)
-        : await api.put(`/api/subjects/${id}`, subject);
+        ? await api.post('/subjects', subject)
+        : await api.put(`/subjects/${id}`, subject);
       
       if (response.data.success) {
         navigate('/subjects');

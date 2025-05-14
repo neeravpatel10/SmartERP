@@ -68,8 +68,8 @@ const StudentResults: React.FC = () => {
       setError(null);
       
       const endpoint = semester 
-        ? `/api/results/student/${usn}/semester/${semester}`
-        : `/api/results/student/${usn}`;
+        ? `/results/student/${usn}/semester/${semester}`
+        : `/results/student/${usn}`;
         
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` }

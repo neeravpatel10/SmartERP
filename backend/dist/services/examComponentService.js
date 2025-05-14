@@ -9,22 +9,58 @@ const getDefaultComponentsForSubject = async (subjectId) => {
         // Get the subject with its category
         const subject = await prisma.subject.findUnique({
             where: { id: subjectId },
-            include: { category: true },
+            include: { subjectcategory: true },
         });
         if (!subject) {
             throw new Error('Subject not found');
         }
-        if (!subject.category) {
+        if (!subject.subjectcategory) {
             throw new Error('Subject does not have a category assigned');
         }
-        // Get or create components based on category
-        return await generateDefaultComponents(subject.id, subject.category.code);
+        // Check if the category has a marking schema defined
+        if (subject.subjectcategory.markingSchema) {
+            try {
+                // Use marking schema from the category if available
+                const schema = JSON.parse(subject.subjectcategory.markingSchema);
+                return await createComponentsFromSchema(subject.id, schema);
+            }
+            catch (e) {
+                console.error('Error parsing marking schema:', e);
+                // Fall back to default templates if schema parsing fails
+            }
+        }
+        // Get or create components based on category code
+        return await generateDefaultComponents(subject.id, subject.subjectcategory.code);
     }
     catch (error) {
         throw error;
     }
 };
 exports.getDefaultComponentsForSubject = getDefaultComponentsForSubject;
+// Helper function to create components from a parsed marking schema
+const createComponentsFromSchema = async (subjectId, schema) => {
+    // Check if components already exist for this subject
+    const existingComponents = await prisma.examComponent.findMany({
+        where: { subjectId },
+    });
+    if (existingComponents.length > 0) {
+        return existingComponents;
+    }
+    // Create components from schema
+    const componentTemplates = schema.map(component => ({
+        subjectId,
+        name: component.name,
+        componentType: component.name.toLowerCase().includes('external') ? 'external' : 'internal',
+        maxMarks: component.max_marks,
+        weightagePercent: (component.max_marks / 100) * 100, // Calculate weightage based on max marks
+        isCustom: false
+    }));
+    // Create all components in a transaction
+    const components = await prisma.$transaction(componentTemplates.map(template => prisma.examComponent.create({
+        data: template
+    })));
+    return components;
+};
 // Helper function to generate default components based on subject category
 const generateDefaultComponents = async (subjectId, categoryCode) => {
     // Check if components already exist for this subject

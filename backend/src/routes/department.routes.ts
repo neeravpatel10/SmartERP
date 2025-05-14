@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { departmentSchema, updateDepartmentSchema, validate } from '../utils/validation';
-import { createDepartment, updateDepartment, getDepartments, getDepartmentById } from '../controllers/department.controller';
+import { createDepartment, updateDepartment, getDepartments, getDepartmentById, deleteDepartment } from '../controllers/department.controller';
 import { authenticate, isSuperAdmin } from '../middleware/auth';
 import { 
   setAuditContext, 
@@ -45,6 +45,23 @@ router.put(
   ),
   setAuditContext('update', 'department', (req) => req.params.id),
   updateDepartment,
+  logAudit
+);
+
+// Delete department - audit this action (super admin only)
+router.delete(
+  '/:id',
+  authenticate,
+  isSuperAdmin,
+  captureEntityState(
+    'department',
+    (req) => req.params.id,
+    async (id) => await prisma.department.findUnique({ 
+      where: { id: parseInt(id) }
+    })
+  ),
+  setAuditContext('delete', 'department', (req) => req.params.id),
+  deleteDepartment,
   logAudit
 );
 

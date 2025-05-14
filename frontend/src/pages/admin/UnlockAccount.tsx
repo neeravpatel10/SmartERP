@@ -6,14 +6,13 @@ import {
   Typography,
   Container,
   Paper,
-  CircularProgress,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Alert
 } from '@mui/material';
-import axios from 'axios';
+import api from '../../utils/api';
 import { unlockAccount, resetAccountUnlockState } from '../../store/auth/authSlice';
 import { RootState, AppDispatch } from '../../store';
 
@@ -34,12 +33,23 @@ declare module '../../store/auth/authSlice' {
 
 const UnlockAccount: React.FC = () => {
   const [lockedUsers, setLockedUsers] = useState<LockedUser[]>([]);
-  const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState('');
 
   const dispatch = useDispatch<AppDispatch>();
   const auth = useSelector((state: RootState) => state.auth);
+
+  const fetchLockedUsers = async () => {
+    try {
+      const response = await api.get('/admin/locked-users');
+      if (response.data.success) {
+        setLockedUsers(response.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching locked users:', err);
+      setFetchError('Failed to fetch locked users');
+    }
+  };
 
   useEffect(() => {
     fetchLockedUsers();
@@ -49,25 +59,6 @@ const UnlockAccount: React.FC = () => {
       dispatch(resetAccountUnlockState());
     };
   }, [dispatch]);
-
-  const fetchLockedUsers = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/admin/locked-users', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      setLockedUsers(response.data);
-      setFetchError(null);
-    } catch (error: any) {
-      setFetchError(error.response?.data?.message || 'Failed to fetch locked users');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUserChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setSelectedUserId(event.target.value as string);
@@ -116,11 +107,7 @@ const UnlockAccount: React.FC = () => {
           </Alert>
         )}
         
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : lockedUsers.length === 0 ? (
+        {lockedUsers.length === 0 ? (
           <Alert severity="info" sx={{ mb: 2 }}>
             No locked user accounts found
           </Alert>

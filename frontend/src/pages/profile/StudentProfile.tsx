@@ -182,7 +182,7 @@ const StudentProfile: React.FC = () => {
     const fetchStudentProfile = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/profile/${usn}`, {
+        const response = await axios.get(`/profile/${usn}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -227,7 +227,7 @@ const StudentProfile: React.FC = () => {
       setDownloading(true);
 
       // Either use window.open for direct download or handle response properly
-      window.open(`/api/profile/${usn}/download`, '_blank');
+      window.open(`/profile/${usn}/download`, '_blank');
       
       setDownloading(false);
     } catch (error) {

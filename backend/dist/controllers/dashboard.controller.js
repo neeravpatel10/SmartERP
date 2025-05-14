@@ -73,26 +73,26 @@ const getSuperAdminDashboard = async () => {
                 subject: true,
                 faculty: true,
                 _count: {
-                    select: { entries: true }
+                    select: { attendanceentry: true }
                 },
-                entries: {
+                attendanceentry: {
                     select: { status: true }
                 }
             }
         }),
         // Recent marks entries
-        index_1.prisma.studentComponentMark.findMany({
+        index_1.prisma.studentcomponentmark.findMany({
             take: 5,
             orderBy: { updatedAt: 'desc' },
             include: {
-                component: {
+                examcomponent: {
                     include: {
                         subject: true
                     }
                 },
-                recorder: {
+                user: {
                     include: {
-                        faculty: true
+                        facultyAccount: true
                     }
                 }
             },
@@ -102,19 +102,19 @@ const getSuperAdminDashboard = async () => {
         index_1.prisma.$queryRaw `
       SELECT s.usn, CONCAT(s.firstName, ' ', s.lastName) as name, 
         AVG(CASE WHEN ae.status = 'Present' THEN 100 ELSE 0 END) as attendancePercentage,
-        GROUP_CONCAT(DISTINCT subj.code) as subjects
-      FROM Student s
-      JOIN AttendanceEntry ae ON s.usn = ae.usn
-      JOIN AttendanceSession sess ON ae.sessionId = sess.id
-      JOIN Subject subj ON sess.subjectId = subj.id
+        GROUP_CONCAT(DISTINCT subj.code SEPARATOR ', ') as subjects
+      FROM student s
+      JOIN attendanceentry ae ON s.usn = ae.usn
+      JOIN attendancesession sess ON ae.sessionId = sess.id
+      JOIN subject subj ON sess.subjectId = subj.id
       GROUP BY s.usn
       HAVING attendancePercentage < 75
       LIMIT 10
     `,
         // Count subjects needing marks entry
-        index_1.prisma.examComponent.count({
+        index_1.prisma.examcomponent.count({
             where: {
-                studentMarks: {
+                studentcomponentmark: {
                     none: {}
                 }
             }
@@ -122,13 +122,13 @@ const getSuperAdminDashboard = async () => {
     ]);
     // Process the attendance data
     const formattedAttendance = recentAttendance.map((session) => {
-        const total = session._count.entries;
-        const present = session.entries.filter((entry) => entry.status === 'Present').length;
+        const total = session._count.attendanceentry;
+        const present = session.attendanceentry.filter((entry) => entry.status === 'Present').length;
         return {
             id: session.id,
             date: session.attendanceDate,
             faculty: {
-                name: session.faculty ? `${session.faculty.firstName} ${session.faculty.lastName}` : 'N/A'
+                name: session.faculty ? `${session.faculty.name || ''}` : 'N/A'
             },
             subject: {
                 code: session.subject.code,
@@ -140,20 +140,20 @@ const getSuperAdminDashboard = async () => {
     });
     // Process the marks data
     const formattedMarks = recentMarks.map((mark) => {
+        var _a, _b;
         return {
             id: mark.id,
             componentId: mark.componentId,
             updatedAt: mark.updatedAt,
             component: {
-                name: mark.component.name,
-                maxMarks: mark.component.maxMarks
+                name: mark.examcomponent.name,
+                maxMarks: mark.examcomponent.maxMarks
             },
             subject: {
-                code: mark.component.subject.code
+                code: mark.examcomponent.subject.code
             },
             faculty: {
-                name: mark.recorder && mark.recorder.faculty ?
-                    `${mark.recorder.faculty.firstName} ${mark.recorder.faculty.lastName}` : 'N/A'
+                name: ((_b = (_a = mark.user) === null || _a === void 0 ? void 0 : _a.facultyAccount) === null || _b === void 0 ? void 0 : _b.name) || 'N/A'
             },
             averageMarks: 0 // This would ideally be calculated
         };
@@ -183,7 +183,7 @@ const getFacultyDashboard = async (facultyId) => {
             }
         }),
         // Count of attendance sessions taken by faculty
-        index_1.prisma.attendanceSession.count({
+        index_1.prisma.attendancesession.count({
             where: {
                 facultyId: String(facultyId)
             }
@@ -198,22 +198,22 @@ const getFacultyDashboard = async (facultyId) => {
             include: {
                 subject: true,
                 _count: {
-                    select: { entries: true }
+                    select: { attendanceentry: true }
                 },
-                entries: {
+                attendanceentry: {
                     select: { status: true }
                 }
             }
         }),
         // Recent marks entries by faculty
-        index_1.prisma.studentComponentMark.findMany({
+        index_1.prisma.studentcomponentmark.findMany({
             where: {
                 recordedBy: facultyId
             },
             take: 5,
             orderBy: { updatedAt: 'desc' },
             include: {
-                component: {
+                examcomponent: {
                     include: {
                         subject: true
                     }
@@ -225,18 +225,18 @@ const getFacultyDashboard = async (facultyId) => {
         index_1.prisma.$queryRaw `
       SELECT s.usn, CONCAT(s.firstName, ' ', s.lastName) as name, 
         AVG(CASE WHEN ae.status = 'Present' THEN 100 ELSE 0 END) as attendancePercentage,
-        GROUP_CONCAT(DISTINCT subj.code) as subjects
-      FROM Student s
-      JOIN AttendanceEntry ae ON s.usn = ae.usn
-      JOIN AttendanceSession sess ON ae.sessionId = sess.id
-      JOIN Subject subj ON sess.subjectId = subj.id
+        GROUP_CONCAT(DISTINCT subj.code SEPARATOR ', ') as subjects
+      FROM student s
+      JOIN attendanceentry ae ON s.usn = ae.usn
+      JOIN attendancesession sess ON ae.sessionId = sess.id
+      JOIN subject subj ON sess.subjectId = subj.id
       WHERE sess.facultyId = ${String(facultyId)}
       GROUP BY s.usn
       HAVING attendancePercentage < 75
       LIMIT 10
     `,
         // Components pending mark entry for faculty
-        index_1.prisma.examComponent.findMany({
+        index_1.prisma.examcomponent.findMany({
             where: {
                 subject: {
                     facultyMappings: {
@@ -246,7 +246,7 @@ const getFacultyDashboard = async (facultyId) => {
                         }
                     }
                 },
-                studentMarks: {
+                studentcomponentmark: {
                     none: {}
                 }
             },
@@ -262,8 +262,8 @@ const getFacultyDashboard = async (facultyId) => {
     ]);
     // Process the attendance data
     const formattedAttendance = recentAttendance.map((session) => {
-        const total = session._count.entries;
-        const present = session.entries.filter((entry) => entry.status === 'Present').length;
+        const total = session._count.attendanceentry;
+        const present = session.attendanceentry.filter((entry) => entry.status === 'Present').length;
         return {
             id: session.id,
             date: session.attendanceDate,
@@ -282,11 +282,11 @@ const getFacultyDashboard = async (facultyId) => {
             componentId: mark.componentId,
             updatedAt: mark.updatedAt,
             component: {
-                name: mark.component.name,
-                maxMarks: mark.component.maxMarks
+                name: mark.examcomponent.name,
+                maxMarks: mark.examcomponent.maxMarks
             },
             subject: {
-                code: mark.component.subject.code
+                code: mark.examcomponent.subject.code
             },
             averageMarks: 0 // This would ideally be calculated
         };
@@ -346,17 +346,17 @@ const getDepartmentAdminDashboard = async (userId) => {
                 subject: true,
                 faculty: true,
                 _count: {
-                    select: { entries: true }
+                    select: { attendanceentry: true }
                 },
-                entries: {
+                attendanceentry: {
                     select: { status: true }
                 }
             }
         }),
         // Recent marks entries in department
-        index_1.prisma.studentComponentMark.findMany({
+        index_1.prisma.studentcomponentmark.findMany({
             where: {
-                component: {
+                examcomponent: {
                     subject: {
                         departmentId
                     }
@@ -365,14 +365,14 @@ const getDepartmentAdminDashboard = async (userId) => {
             take: 5,
             orderBy: { updatedAt: 'desc' },
             include: {
-                component: {
+                examcomponent: {
                     include: {
                         subject: true
                     }
                 },
-                recorder: {
+                user: {
                     include: {
-                        faculty: true
+                        facultyAccount: true
                     }
                 }
             },
@@ -382,23 +382,23 @@ const getDepartmentAdminDashboard = async (userId) => {
         index_1.prisma.$queryRaw `
       SELECT s.usn, CONCAT(s.firstName, ' ', s.lastName) as name, 
         AVG(CASE WHEN ae.status = 'Present' THEN 100 ELSE 0 END) as attendancePercentage,
-        GROUP_CONCAT(DISTINCT subj.code) as subjects
-      FROM Student s
-      JOIN AttendanceEntry ae ON s.usn = ae.usn
-      JOIN AttendanceSession sess ON ae.sessionId = sess.id
-      JOIN Subject subj ON sess.subjectId = subj.id
+        GROUP_CONCAT(DISTINCT subj.code SEPARATOR ', ') as subjects
+      FROM student s
+      JOIN attendanceentry ae ON s.usn = ae.usn
+      JOIN attendancesession sess ON ae.sessionId = sess.id
+      JOIN subject subj ON sess.subjectId = subj.id
       WHERE s.departmentId = ${departmentId}
       GROUP BY s.usn
       HAVING attendancePercentage < 75
       LIMIT 10
     `,
         // Count subjects needing marks entry in department
-        index_1.prisma.examComponent.count({
+        index_1.prisma.examcomponent.count({
             where: {
                 subject: {
                     departmentId
                 },
-                studentMarks: {
+                studentcomponentmark: {
                     none: {}
                 }
             }
@@ -406,13 +406,13 @@ const getDepartmentAdminDashboard = async (userId) => {
     ]);
     // Process the attendance data
     const formattedAttendance = recentAttendance.map((session) => {
-        const total = session._count.entries;
-        const present = session.entries.filter((entry) => entry.status === 'present').length;
+        const total = session._count.attendanceentry;
+        const present = session.attendanceentry.filter((entry) => entry.status === 'Present').length;
         return {
             id: session.id,
             date: session.attendanceDate,
             faculty: {
-                name: session.faculty ? `${session.faculty.firstName} ${session.faculty.lastName}` : 'N/A'
+                name: session.faculty ? `${session.faculty.name || ''}` : 'N/A'
             },
             subject: {
                 code: session.subject.code,
@@ -424,20 +424,20 @@ const getDepartmentAdminDashboard = async (userId) => {
     });
     // Process the marks data
     const formattedMarks = recentMarks.map((mark) => {
+        var _a, _b;
         return {
             id: mark.id,
             componentId: mark.componentId,
             updatedAt: mark.updatedAt,
             component: {
-                name: mark.component.name,
-                maxMarks: mark.component.maxMarks
+                name: mark.examcomponent.name,
+                maxMarks: mark.examcomponent.maxMarks
             },
             subject: {
-                code: mark.component.subject.code
+                code: mark.examcomponent.subject.code
             },
             faculty: {
-                name: mark.recorder && mark.recorder.faculty ?
-                    `${mark.recorder.faculty.firstName} ${mark.recorder.faculty.lastName}` : 'N/A'
+                name: ((_b = (_a = mark.user) === null || _a === void 0 ? void 0 : _a.facultyAccount) === null || _b === void 0 ? void 0 : _b.name) || 'N/A'
             },
             averageMarks: 0 // This would ideally be calculated
         };
@@ -476,8 +476,8 @@ const getStudentDashboard = async (userId) => {
         // Count of subjects for the student - using raw query to avoid schema mismatch
         index_1.prisma.$queryRaw `
       SELECT COUNT(*) as count
-      FROM Subject s
-      JOIN StudentSubjectEnrollment sse ON s.id = sse.subjectId
+      FROM subject s
+      JOIN studentsubjectenrollment sse ON s.id = sse.subjectId
       WHERE sse.studentUsn = ${usn}
     `,
         // Fetch attendance data for the student
@@ -486,25 +486,23 @@ const getStudentDashboard = async (userId) => {
         subj.code as subjectCode,
         subj.name as subjectName,
         COUNT(ae.id) as totalSessions,
-        SUM(CASE WHEN ae.status = 'present' THEN 1 ELSE 0 END) as presentCount
-      FROM Student s
-      JOIN AttendanceEntry ae ON s.usn = ae.usn
-      JOIN AttendanceSession sess ON ae.sessionId = sess.id
-      JOIN Subject subj ON sess.subjectId = subj.id
+        SUM(CASE WHEN ae.status = 'Present' THEN 1 ELSE 0 END) as presentCount
+      FROM student s
+      JOIN attendanceentry ae ON s.usn = ae.usn
+      JOIN attendancesession sess ON ae.sessionId = sess.id
+      JOIN subject subj ON sess.subjectId = subj.id
       WHERE s.usn = ${usn}
       GROUP BY subj.id
     `,
         // Fetch recent marks for the student
-        index_1.prisma.studentComponentMark.findMany({
+        index_1.prisma.studentcomponentmark.findMany({
             where: {
-                student: {
-                    usn
-                }
+                usn
             },
             take: 5,
             orderBy: { updatedAt: 'desc' },
             include: {
-                component: {
+                examcomponent: {
                     include: {
                         subject: true
                     }
@@ -516,9 +514,9 @@ const getStudentDashboard = async (userId) => {
       SELECT 
         s.semester as semesterNumber,
         AVG(scm.marksObtained / ec.maxMarks * 10) as sgpa
-      FROM Student s
-      JOIN StudentComponentMark scm ON s.usn = scm.studentUsn
-      JOIN ExamComponent ec ON scm.componentId = ec.id
+      FROM student s
+      JOIN studentcomponentmark scm ON s.usn = scm.studentUsn
+      JOIN examcomponent ec ON scm.componentId = ec.id
       WHERE s.usn = ${usn}
         AND ec.maxMarks IS NOT NULL AND ec.maxMarks <> 0
       GROUP BY s.semester
@@ -549,11 +547,11 @@ const getStudentDashboard = async (userId) => {
         return {
             id: mark.id,
             component: {
-                name: ((_a = mark.component) === null || _a === void 0 ? void 0 : _a.name) || 'N/A',
-                maxMarks: ((_b = mark.component) === null || _b === void 0 ? void 0 : _b.maxMarks) || 0
+                name: ((_a = mark.examcomponent) === null || _a === void 0 ? void 0 : _a.name) || 'N/A',
+                maxMarks: ((_b = mark.examcomponent) === null || _b === void 0 ? void 0 : _b.maxMarks) || 0
             },
             subject: {
-                code: ((_d = (_c = mark.component) === null || _c === void 0 ? void 0 : _c.subject) === null || _d === void 0 ? void 0 : _d.code) || 'N/A'
+                code: ((_d = (_c = mark.examcomponent) === null || _c === void 0 ? void 0 : _c.subject) === null || _d === void 0 ? void 0 : _d.code) || 'N/A'
             },
             obtainedMarks: mark.marksObtained,
             date: mark.updatedAt

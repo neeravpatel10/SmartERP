@@ -42,28 +42,62 @@ const getSubjectById = async (id) => {
 exports.getSubjectById = getSubjectById;
 // Create new subject (starts in draft status)
 const createSubject = async (subjectData, userId) => {
-    const subject = await prisma.subject.create({
-        data: {
-            code: subjectData.code,
-            name: subjectData.name,
-            semester: subjectData.semester,
-            credits: subjectData.credits,
-            isLab: subjectData.isLab || false,
-            departmentId: subjectData.departmentId,
-            categoryId: subjectData.categoryId,
-            schemeYear: subjectData.schemeYear,
-            status: client_1.SubjectStatus.draft,
-        },
+    // Start a transaction to create both subject and exam components
+    return await prisma.$transaction(async (tx) => {
+        // Create the subject first
+        const subject = await tx.subject.create({
+            data: {
+                code: subjectData.code,
+                name: subjectData.name,
+                semester: subjectData.semester,
+                credits: subjectData.credits,
+                isLab: subjectData.isLab || false,
+                departmentId: subjectData.departmentId,
+                categoryId: subjectData.categoryId,
+                schemeYear: subjectData.schemeYear,
+                status: client_1.SubjectStatus.draft,
+                section: subjectData.section || null,
+            },
+        });
+        // Log initial status
+        await tx.subjectstatuslog.create({
+            data: {
+                subjectId: subject.id,
+                status: client_1.SubjectStatus.draft,
+                changedBy: userId,
+            },
+        });
+        // If category is specified, fetch its marking schema and create exam components
+        if (subjectData.categoryId) {
+            const category = await tx.subjectcategory.findUnique({
+                where: { id: subjectData.categoryId },
+            });
+            if (category && category.markingSchema) {
+                try {
+                    const markingSchema = JSON.parse(category.markingSchema);
+                    if (Array.isArray(markingSchema)) {
+                        // Create exam components based on the marking schema
+                        for (const component of markingSchema) {
+                            await tx.examcomponent.create({
+                                data: {
+                                    subjectId: subject.id,
+                                    name: component.name,
+                                    componentType: component.name.toLowerCase().includes('external') ? 'external' : 'internal',
+                                    maxMarks: component.max_marks,
+                                    weightagePercent: (component.max_marks / 100) * 100, // Calculate weightage based on max marks
+                                },
+                            });
+                        }
+                    }
+                }
+                catch (error) {
+                    console.error('Error parsing marking schema:', error);
+                    // Continue without creating components if schema is invalid
+                }
+            }
+        }
+        return subject;
     });
-    // Log initial status
-    await prisma.subjectStatusLog.create({
-        data: {
-            subjectId: subject.id,
-            status: client_1.SubjectStatus.draft,
-            changedBy: userId,
-        },
-    });
-    return subject;
 };
 exports.createSubject = createSubject;
 // Update subject status
@@ -125,18 +159,79 @@ const validateStatusTransition = (currentStatus, newStatus) => {
 };
 // Update subject details
 const updateSubject = async (id, subjectData) => {
-    return await prisma.subject.update({
+    // First, check if the subject is in draft status
+    const subject = await prisma.subject.findUnique({
         where: { id },
-        data: {
-            code: subjectData.code,
-            name: subjectData.name,
-            semester: subjectData.semester,
-            credits: subjectData.credits,
-            isLab: subjectData.isLab,
-            departmentId: subjectData.departmentId,
-            categoryId: subjectData.categoryId,
-            schemeYear: subjectData.schemeYear,
+        include: {
+            examcomponent: true,
         },
+    });
+    if (!subject) {
+        throw new Error('Subject not found');
+    }
+    if (subject.status !== client_1.SubjectStatus.draft) {
+        throw new Error('Only subjects in draft status can be updated');
+    }
+    return await prisma.$transaction(async (tx) => {
+        // Update the subject basic details
+        const updatedSubject = await tx.subject.update({
+            where: { id },
+            data: {
+                code: subjectData.code,
+                name: subjectData.name,
+                semester: subjectData.semester,
+                credits: subjectData.credits,
+                isLab: subjectData.isLab,
+                departmentId: subjectData.departmentId,
+                section: subjectData.section || null,
+                schemeYear: subjectData.schemeYear,
+            },
+        });
+        // If category ID is changing, we need to replace all exam components
+        if (subjectData.categoryId && subjectData.categoryId !== subject.categoryId) {
+            // Update subject category ID
+            await tx.subject.update({
+                where: { id },
+                data: {
+                    categoryId: subjectData.categoryId,
+                },
+            });
+            // Delete existing exam components
+            await tx.examcomponent.deleteMany({
+                where: {
+                    subjectId: id,
+                    isCustom: false, // Only delete non-custom components
+                },
+            });
+            // Fetch new category marking schema
+            const category = await tx.subjectcategory.findUnique({
+                where: { id: subjectData.categoryId },
+            });
+            if (category && category.markingSchema) {
+                try {
+                    const markingSchema = JSON.parse(category.markingSchema);
+                    if (Array.isArray(markingSchema)) {
+                        // Create new exam components based on the marking schema
+                        for (const component of markingSchema) {
+                            await tx.examcomponent.create({
+                                data: {
+                                    subjectId: id,
+                                    name: component.name,
+                                    componentType: component.name.toLowerCase().includes('external') ? 'external' : 'internal',
+                                    maxMarks: component.max_marks,
+                                    weightagePercent: (component.max_marks / 100) * 100, // Calculate weightage based on max marks
+                                },
+                            });
+                        }
+                    }
+                }
+                catch (error) {
+                    console.error('Error parsing marking schema:', error);
+                    // Continue without creating components if schema is invalid
+                }
+            }
+        }
+        return updatedSubject;
     });
 };
 exports.updateSubject = updateSubject;

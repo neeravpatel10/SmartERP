@@ -23,16 +23,35 @@ const marks_routes_1 = __importDefault(require("./routes/marks.routes"));
 const iaConfig_routes_1 = __importDefault(require("./routes/iaConfig.routes"));
 const assignmentConfig_routes_1 = __importDefault(require("./routes/assignmentConfig.routes"));
 const results_routes_1 = __importDefault(require("./routes/results.routes"));
-const reports_routes_1 = __importDefault(require("./routes/reports.routes"));
 const profile_routes_1 = __importDefault(require("./routes/profile.routes"));
 const auditLog_routes_1 = __importDefault(require("./routes/auditLog.routes"));
 const dashboard_routes_1 = __importDefault(require("./routes/dashboard.routes"));
+const section_routes_1 = __importDefault(require("./routes/section.routes"));
 // Load environment variables
 dotenv_1.default.config();
 // Initialize Prisma Client
 exports.prisma = new client_1.PrismaClient();
+// Verify database connection
+exports.prisma.$connect()
+    .then(() => {
+    console.log('Successfully connected to database');
+})
+    .catch((error) => {
+    console.error('Failed to connect to database:', error);
+    process.exit(1);
+});
+// Handle Prisma errors
+exports.prisma.$on('query', (e) => {
+    console.log('Query:', e.query);
+    console.log('Duration:', e.duration, 'ms');
+});
+exports.prisma.$on('error', (e) => {
+    console.error('Prisma Error:', e);
+});
 // Create Express app
 const app = (0, express_1.default)();
+// Trust proxy for correct rate limiting
+app.set('trust proxy', 1);
 // Middleware
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
@@ -62,10 +81,10 @@ app.use('/api/marks', marks_routes_1.default);
 app.use('/api/ia-config', iaConfig_routes_1.default);
 app.use('/api/assignment-config', assignmentConfig_routes_1.default);
 app.use('/api/results', results_routes_1.default);
-app.use('/api/reports', reports_routes_1.default);
 app.use('/api/profile', profile_routes_1.default);
 app.use('/api/audit-logs', auditLog_routes_1.default);
 app.use('/api/dashboard', dashboard_routes_1.default);
+app.use('/api/sections', section_routes_1.default);
 // 404 Handler
 app.use((req, res) => {
     res.status(404).json({

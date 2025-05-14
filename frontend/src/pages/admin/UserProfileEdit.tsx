@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
@@ -58,32 +58,8 @@ const UserProfileEdit: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { loading, error, success } = useSelector((state: RootState) => state.users);
   
-  useEffect(() => {
-    dispatch(resetError());
-    dispatch(resetSuccess());
-    
-    if (userId) {
-      fetchUserData();
-      fetchDepartments();
-    }
-    
-    return () => {
-      dispatch(resetSuccess());
-    };
-  }, [dispatch, userId]);
-  
-  useEffect(() => {
-    // Redirect back after successful update
-    if (success) {
-      const timer = setTimeout(() => {
-        navigate('/admin/users');
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [success, navigate]);
-  
-  const fetchUserData = async () => {
+  // Define fetchUserData and fetchDepartments with useCallback
+  const fetchUserData = useCallback(async () => {
     if (!userId) return;
     
     setLoadingData(true);
@@ -111,9 +87,9 @@ const UserProfileEdit: React.FC = () => {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [userId, setUser, setFormData, setLoadingData, setFetchError]);
   
-  const fetchDepartments = async () => {
+  const fetchDepartments = useCallback(async () => {
     try {
       const response = await axios.get('/api/departments', {
         headers: {
@@ -124,7 +100,32 @@ const UserProfileEdit: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch departments', error);
     }
-  };
+  }, [setDepartments]);
+  
+  useEffect(() => {
+    dispatch(resetError());
+    dispatch(resetSuccess());
+    
+    if (userId) {
+      fetchUserData();
+      fetchDepartments();
+    }
+    
+    return () => {
+      dispatch(resetSuccess());
+    };
+  }, [dispatch, userId, fetchUserData, fetchDepartments]);
+  
+  useEffect(() => {
+    // Redirect back after successful update
+    if (success) {
+      const timer = setTimeout(() => {
+        navigate('/admin/users');
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [success, navigate]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;

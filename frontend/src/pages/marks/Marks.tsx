@@ -42,7 +42,7 @@ const Marks: React.FC = () => {
       setError(null);
       
       try {
-        const response = await axios.get('/api/subjects/faculty-mapping', {
+        const response = await axios.get('/subjects/faculty-mapping', {
           headers: { Authorization: `Bearer ${token}` },
           params: { active: true }
         });

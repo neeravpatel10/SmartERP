@@ -27,7 +27,7 @@ export const login = async (req: Request, res: Response) => {
       where: { username },
       include: {
         student: true,
-        faculty: true,
+        facultyAccount: true,
         department: true
       }
     });

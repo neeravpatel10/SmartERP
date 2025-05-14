@@ -1,5 +1,7 @@
 // Theme configuration as per college_erp_ui_design.md
 
+import { createTheme } from '@mui/material/styles';
+
 export const colors = {
   // Primary colors
   primary: {
@@ -137,4 +139,38 @@ export const roleConfig = {
       { label: 'Settings', icon: '⚙️', path: '/settings' },
     ],
   },
-}; 
+};
+
+const muiTheme = createTheme({
+  palette: {
+    primary: {
+      main: colors.primary.main,
+      light: colors.primary.light,
+      dark: colors.primary.dark,
+      contrastText: colors.primary.contrastText,
+    },
+    secondary: {
+      main: colors.accent.main,
+      light: colors.accent.light,
+      dark: colors.accent.dark,
+      contrastText: colors.accent.contrastText,
+    },
+    error: { main: colors.system.error },
+    warning: { main: colors.system.warning },
+    info: { main: colors.system.info },
+    success: { main: colors.system.success },
+    background: {
+      default: colors.neutral.lightGray,
+      paper: colors.neutral.white,
+    },
+    text: {
+      primary: colors.neutral.text,
+      secondary: colors.neutral.textSecondary,
+    },
+  },
+  typography: {
+    fontFamily: typography.fontFamily,
+  },
+});
+
+export default muiTheme; 

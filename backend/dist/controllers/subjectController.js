@@ -36,14 +36,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSubjectsByDepartment = exports.getSubjectsByStatus = exports.getSubjectStatusHistory = exports.updateSubjectStatus = exports.deleteSubject = exports.updateSubject = exports.createSubject = exports.getSubjectById = exports.getAllSubjects = void 0;
 const subjectService = __importStar(require("../services/subjectService"));
 const client_1 = require("@prisma/client");
+const client_2 = require("@prisma/client");
+const prisma = new client_2.PrismaClient();
 // Get all subjects
 const getAllSubjects = async (req, res) => {
     try {
         const subjects = await subjectService.getAllSubjects();
-        res.status(200).json(subjects);
+        res.status(200).json({
+            success: true,
+            message: 'Subjects retrieved successfully',
+            data: subjects
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.getAllSubjects = getAllSubjects;
@@ -53,12 +62,22 @@ const getSubjectById = async (req, res) => {
         const { id } = req.params;
         const subject = await subjectService.getSubjectById(Number(id));
         if (!subject) {
-            return res.status(404).json({ message: 'Subject not found' });
+            return res.status(404).json({
+                success: false,
+                message: 'Subject not found'
+            });
         }
-        res.status(200).json(subject);
+        res.status(200).json({
+            success: true,
+            message: 'Subject retrieved successfully',
+            data: subject
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.getSubjectById = getSubjectById;
@@ -68,10 +87,17 @@ const createSubject = async (req, res) => {
         const subjectData = req.body;
         const userId = req.user.id; // Get user ID from auth middleware
         const subject = await subjectService.createSubject(subjectData, userId);
-        res.status(201).json(subject);
+        res.status(201).json({
+            success: true,
+            message: 'Subject created successfully',
+            data: subject
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.createSubject = createSubject;
@@ -81,10 +107,17 @@ const updateSubject = async (req, res) => {
         const { id } = req.params;
         const subjectData = req.body;
         const subject = await subjectService.updateSubject(Number(id), subjectData);
-        res.status(200).json(subject);
+        res.status(200).json({
+            success: true,
+            message: 'Subject updated successfully',
+            data: subject
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.updateSubject = updateSubject;
@@ -93,10 +126,16 @@ const deleteSubject = async (req, res) => {
     try {
         const { id } = req.params;
         await subjectService.deleteSubject(Number(id));
-        res.status(200).json({ message: 'Subject deleted successfully' });
+        res.status(200).json({
+            success: true,
+            message: 'Subject deleted successfully'
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.deleteSubject = deleteSubject;
@@ -108,13 +147,46 @@ const updateSubjectStatus = async (req, res) => {
         const userId = req.user.id; // Get user ID from auth middleware
         // Validate status
         if (!Object.values(client_1.SubjectStatus).includes(status)) {
-            return res.status(400).json({ message: 'Invalid status' });
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status'
+            });
+        }
+        // Get the current subject to check its status
+        const currentSubject = await subjectService.getSubjectById(Number(id));
+        if (!currentSubject) {
+            return res.status(404).json({
+                success: false,
+                message: 'Subject not found'
+            });
+        }
+        // Transitioning from draft to active: validate that the subject has all required components
+        if (currentSubject.status === client_1.SubjectStatus.draft && status === client_1.SubjectStatus.active) {
+            // Check if the subject has at least one internal and one external component
+            const examComponents = await prisma.examcomponent.findMany({
+                where: { subjectId: Number(id) }
+            });
+            const hasInternalComponent = examComponents.some(c => c.componentType === 'internal');
+            const hasExternalComponent = examComponents.some(c => c.componentType === 'external');
+            if (!hasInternalComponent || !hasExternalComponent) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Subject must have at least one internal and one external assessment component before it can be activated'
+                });
+            }
         }
         const subject = await subjectService.updateSubjectStatus(Number(id), status, userId);
-        res.status(200).json(subject);
+        res.status(200).json({
+            success: true,
+            message: `Subject status updated to ${status}`,
+            data: subject
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.updateSubjectStatus = updateSubjectStatus;
@@ -123,10 +195,17 @@ const getSubjectStatusHistory = async (req, res) => {
     try {
         const { id } = req.params;
         const statusHistory = await subjectService.getSubjectStatusHistory(Number(id));
-        res.status(200).json(statusHistory);
+        res.status(200).json({
+            success: true,
+            message: 'Subject status history retrieved successfully',
+            data: statusHistory
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.getSubjectStatusHistory = getSubjectStatusHistory;
@@ -136,13 +215,23 @@ const getSubjectsByStatus = async (req, res) => {
         const { status } = req.params;
         // Validate status
         if (!Object.values(client_1.SubjectStatus).includes(status)) {
-            return res.status(400).json({ message: 'Invalid status' });
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status'
+            });
         }
         const subjects = await subjectService.getSubjectsByStatus(status);
-        res.status(200).json(subjects);
+        res.status(200).json({
+            success: true,
+            message: `Subjects with status '${status}' retrieved successfully`,
+            data: subjects
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.getSubjectsByStatus = getSubjectsByStatus;
@@ -151,10 +240,17 @@ const getSubjectsByDepartment = async (req, res) => {
     try {
         const { departmentId } = req.params;
         const subjects = await subjectService.getSubjectsByDepartment(Number(departmentId));
-        res.status(200).json(subjects);
+        res.status(200).json({
+            success: true,
+            message: `Subjects for department ${departmentId} retrieved successfully`,
+            data: subjects
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 exports.getSubjectsByDepartment = getSubjectsByDepartment;

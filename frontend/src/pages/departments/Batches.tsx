@@ -35,7 +35,7 @@ import UpgradeIcon from '@mui/icons-material/Upgrade';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import api from '../../utils/api';
 
 interface Batch {
   id: number;
@@ -74,7 +74,7 @@ const initialFormData: BatchFormData = {
 const Batches: React.FC = () => {
   const navigate = useNavigate();
   const { departmentId } = useParams<{ departmentId: string }>();
-  const { token } = useAuth();
+  useAuth();
   
   const [batches, setBatches] = useState<Batch[]>([]);
   const [department, setDepartment] = useState<{ id: number; name: string; code: string } | null>(null);
@@ -97,9 +97,7 @@ const Batches: React.FC = () => {
   // Wrap fetchDepartment in useCallback
   const fetchDepartment = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/departments/${departmentId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get(`/departments/${departmentId}`);
       
       if (response.data.success) {
         setDepartment(response.data.data);
@@ -108,7 +106,7 @@ const Batches: React.FC = () => {
       console.error('Error fetching department:', err);
       setError('Failed to load department information');
     }
-  }, [departmentId, token]);
+  }, [departmentId]);
 
   // Wrap fetchBatches in useCallback
   const fetchBatches = useCallback(async () => {
@@ -116,8 +114,7 @@ const Batches: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.get('/api/batches', {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get('/batches', {
         params: { 
           departmentId,
           search: searchTerm,
@@ -134,7 +131,7 @@ const Batches: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [departmentId, token, searchTerm, showArchived]);
+  }, [departmentId, searchTerm, showArchived]);
 
   useEffect(() => {
     if (departmentId) {
@@ -189,9 +186,7 @@ const Batches: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.delete(`/api/batches/${batchToDelete.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.delete(`/batches/${batchToDelete.id}`);
       
       if (response.data.success) {
         setSuccess('Batch deleted successfully');
@@ -219,21 +214,18 @@ const Batches: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.put(`/api/batches/${batchToRollover.id}/rollover`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.put(`/batches/${batchToRollover.id}/rollover`);
       
       if (response.data.success) {
-        setSuccess(`Semester rollover successful. Batch is now in semester ${batchToRollover.currentSemester + 1}`);
+        setSuccess('Batch rolled over successfully');
         fetchBatches();
       }
     } catch (err: any) {
       console.error('Error rolling over batch:', err);
-      setError(err.response?.data?.message || 'Failed to rollover batch to next semester');
+      setError(err.response?.data?.message || 'Failed to rollover batch');
     } finally {
       setLoading(false);
       setRolloverDialogOpen(false);
-      setBatchToRollover(null);
     }
   };
 
@@ -242,78 +234,49 @@ const Batches: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.put(`/api/batches/${batch.id}/archive`, 
-        { archived: !batch.archived },
-        { headers: { Authorization: `Bearer ${token}` }}
-      );
+      const response = await api.put(`/batches/${batch.id}/archive`, {
+        archived: !batch.archived
+      });
       
       if (response.data.success) {
         setSuccess(`Batch ${batch.archived ? 'unarchived' : 'archived'} successfully`);
         fetchBatches();
       }
     } catch (err: any) {
-      console.error('Error archiving/unarchiving batch:', err);
-      setError(err.response?.data?.message || 'Failed to update archive status');
+      console.error('Error toggling archive status:', err);
+      setError(err.response?.data?.message || 'Failed to update batch archive status');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSubmit = async () => {
-    // Validate form
-    if (!formData.name || !formData.year) {
-      setError('Please fill in all required fields');
-      return;
-    }
-    
     setSubmitting(true);
     setError(null);
     
     try {
+      let response;
+      
       if (isEditing && currentBatchId) {
-        // Update existing batch
-        const response = await axios.put(
-          `/api/batches/${currentBatchId}`,
-          {
-            name: formData.name,
-            year: formData.year,
-            currentSemester: formData.currentSemester,
-            autoRollover: formData.autoRollover,
-            archived: formData.archived,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        
-        if (response.data.success) {
-          setSuccess('Batch updated successfully');
-          fetchBatches();
-        }
+        response = await api.put(`/batches/${currentBatchId}`, {
+          ...formData,
+          departmentId: Number(departmentId)
+        });
       } else {
-        // Create new batch
-        const response = await axios.post(
-          '/api/batches',
-          {
-            name: formData.name,
-            year: formData.year,
-            departmentId: Number(departmentId),
-            currentSemester: formData.currentSemester,
-            autoRollover: formData.autoRollover,
-            archived: formData.archived,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        
-        if (response.data.success) {
-          setSuccess('Batch created successfully');
-          fetchBatches();
-        }
+        response = await api.post('/batches', {
+          ...formData,
+          departmentId: Number(departmentId)
+        });
       }
       
-      // Close dialog
-      setDialogOpen(false);
+      if (response.data.success) {
+        setSuccess(`Batch ${isEditing ? 'updated' : 'created'} successfully`);
+        setDialogOpen(false);
+        fetchBatches();
+      }
     } catch (err: any) {
       console.error('Error submitting batch:', err);
-      setError(err.response?.data?.message || 'Failed to save batch');
+      setError(err.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} batch`);
     } finally {
       setSubmitting(false);
     }

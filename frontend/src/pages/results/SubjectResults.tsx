@@ -72,7 +72,7 @@ const SubjectResults: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get(`/api/results/view/${subject_id}`, {
+      const response = await axios.get(`/results/view/${subject_id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -112,7 +112,7 @@ const SubjectResults: React.FC = () => {
       setError(null);
       setSuccess(null);
       
-      const response = await axios.post(`/api/results/calculate/${subject_id}`, {}, {
+      const response = await axios.post(`/results/calculate/${subject_id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

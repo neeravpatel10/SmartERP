@@ -34,7 +34,7 @@ export const getUsers = createAsyncThunk(
   'admin/users/getUsers',
   async ({ page = 1, limit = 10, search = '' }: { page?: number; limit?: number; search?: string }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/admin/users?page=${page}&limit=${limit}&search=${search}`);
+      const response = await axios.get(`/admin/users?page=${page}&limit=${limit}&search=${search}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch users');
@@ -47,7 +47,7 @@ export const getUserById = createAsyncThunk(
   'admin/users/getUserById',
   async (userId: string, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/admin/users/${userId}`);
+      const response = await axios.get(`/admin/users/${userId}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
@@ -60,7 +60,7 @@ export const createUser = createAsyncThunk(
   'admin/users/createUser',
   async (userData: Partial<User>, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/admin/users', userData);
+      const response = await axios.post('/admin/users', userData);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create user');
@@ -73,7 +73,7 @@ export const updateUser = createAsyncThunk(
   'admin/users/updateUser',
   async ({ userId, userData }: { userId: string; userData: Partial<User> }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`/api/admin/users/${userId}`, userData);
+      const response = await axios.put(`/admin/users/${userId}`, userData);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update user');
@@ -86,7 +86,7 @@ export const deleteUser = createAsyncThunk(
   'admin/users/deleteUser',
   async (userId: string, { rejectWithValue }) => {
     try {
-      await axios.delete(`/api/admin/users/${userId}`);
+      await axios.delete(`/admin/users/${userId}`);
       return userId;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete user');

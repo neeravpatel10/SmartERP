@@ -125,7 +125,7 @@ export const changePassword = createAsyncThunk(
   'auth/changePassword',
   async (
     passwords: { currentPassword: string; newPassword: string },
-    { rejectWithValue }
+    { rejectWithValue, dispatch }
   ) => {
     try {
       const token = localStorage.getItem('token');
@@ -145,6 +145,8 @@ export const changePassword = createAsyncThunk(
       );
       
       if (response.data.success) {
+        // After successful password change, get updated user data
+        dispatch(getCurrentUser());
         return response.data;
       } else {
         return rejectWithValue(response.data.message);
@@ -245,6 +247,11 @@ const authSlice = createSlice({
     },
     resetAccountUnlockState: (state) => {
       state.accountUnlockSuccess = false;
+    },
+    updateUserFirstLogin: (state, action: PayloadAction<boolean>) => {
+      if (state.user) {
+        state.user.firstLogin = action.payload;
+      }
     }
   },
   extraReducers: (builder) => {
@@ -254,12 +261,12 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<any>) => {
+      .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
         state.token = action.payload.token;
         state.user = action.payload.user;
-        console.log('login.fulfilled: Storing token:', action.payload.token ? 'Token Present' : 'Token MISSING!');
+        state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -302,6 +309,10 @@ const authSlice = createSlice({
       })
       .addCase(changePassword.fulfilled, (state) => {
         state.loading = false;
+        state.error = null;
+        if (state.user) {
+          state.user.firstLogin = false;
+        }
       })
       .addCase(changePassword.rejected, (state, action) => {
         state.loading = false;
@@ -358,5 +369,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { resetError, resetPasswordResetStates, resetAccountUnlockState } = authSlice.actions;
+export const { resetError, resetPasswordResetStates, resetAccountUnlockState, updateUserFirstLogin } = authSlice.actions;
 export default authSlice.reducer; 

@@ -1,45 +1,14 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bulkUploadStudents = exports.getStudentByUSN = exports.getStudents = exports.updateStudent = exports.createStudent = void 0;
+exports.deleteStudent = exports.exportStudentsToExcel = exports.importStudentsFromExcel = exports.bulkUploadStudents = exports.getStudentByUSN = exports.getStudents = exports.updateStudent = exports.getStudentsWithoutLogins = exports.createMultipleStudentLogins = exports.createStudentLogin = exports.createStudent = void 0;
 const index_1 = require("../index");
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const XLSX = __importStar(require("xlsx"));
+const exceljs_1 = __importDefault(require("exceljs"));
+const errors_1 = require("../utils/errors");
+const validation_1 = require("../utils/validation");
 const createStudent = async (req, res) => {
     try {
         const { usn, firstName, middleName, lastName, email, phone, dob, gender, address, batchId, departmentId, semester, section, admissionYear, fatherName, motherName, guardianName, guardianContact } = req.body;
@@ -83,7 +52,7 @@ const createStudent = async (req, res) => {
                 message: 'Department not found'
             });
         }
-        // Create student
+        // Create student without creating user account
         const student = await index_1.prisma.student.create({
             data: {
                 usn,
@@ -110,8 +79,7 @@ const createStudent = async (req, res) => {
                     select: {
                         id: true,
                         name: true,
-                        startYear: true,
-                        endYear: true
+                        academicYear: true
                     }
                 },
                 department: {
@@ -123,17 +91,65 @@ const createStudent = async (req, res) => {
                 }
             }
         });
-        // Create user account for the student
-        const username = usn.toLowerCase(); // Use USN as username
-        const defaultPassword = `${usn.toLowerCase()}@${admissionYear}`; // Default password pattern
+        res.status(201).json({
+            success: true,
+            message: 'Student created successfully',
+            data: {
+                student
+            }
+        });
+    }
+    catch (error) {
+        console.error('Create student error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+exports.createStudent = createStudent;
+// New function to create login for a single student
+const createStudentLogin = async (req, res) => {
+    try {
+        const { usn } = req.params;
+        // Check if student exists
+        const student = await index_1.prisma.student.findUnique({
+            where: { usn }
+        });
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: 'Student not found'
+            });
+        }
+        // Check if student already has a user account
+        if (student.userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Student already has a user account'
+            });
+        }
+        // Check if username (USN) already exists in user table
+        const existingUser = await index_1.prisma.user.findFirst({
+            where: { username: usn.toLowerCase() }
+        });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username already exists'
+            });
+        }
+        // Create user account
+        const username = usn.toLowerCase();
+        const defaultPassword = usn;
         const hashedPassword = await bcrypt_1.default.hash(defaultPassword, 10);
         const user = await index_1.prisma.user.create({
             data: {
                 username,
-                email,
+                email: student.email || `${username}@placeholder.edu`,
                 passwordHash: hashedPassword,
                 loginType: -1, // Student login type
-                departmentId,
+                departmentId: student.departmentId,
                 isActive: true,
                 firstLogin: true,
                 student: {
@@ -152,24 +168,183 @@ const createStudent = async (req, res) => {
         });
         res.status(201).json({
             success: true,
-            message: 'Student created successfully',
+            message: 'Student login created successfully',
             data: {
-                student,
-                user
+                user,
+                defaultPassword // Include default password in the response
             }
         });
     }
     catch (error) {
-        console.error('Create student error:', error);
+        console.error('Create student login error:', error);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
         });
     }
 };
-exports.createStudent = createStudent;
+exports.createStudentLogin = createStudentLogin;
+// New function to create multiple student logins at once
+const createMultipleStudentLogins = async (req, res) => {
+    try {
+        const { studentIds } = req.body;
+        if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide an array of student USNs'
+            });
+        }
+        const results = {
+            success: [],
+            failed: []
+        };
+        // Process each student
+        for (const usn of studentIds) {
+            try {
+                // Check if student exists
+                const student = await index_1.prisma.student.findUnique({
+                    where: { usn }
+                });
+                if (!student) {
+                    results.failed.push({ usn, reason: 'Student not found' });
+                    continue;
+                }
+                // Check if student already has a user account
+                if (student.userId) {
+                    results.failed.push({ usn, reason: 'Student already has a user account' });
+                    continue;
+                }
+                // Check if username (USN) already exists in the user table
+                const existingUser = await index_1.prisma.user.findFirst({
+                    where: { username: usn.toLowerCase() }
+                });
+                if (existingUser) {
+                    results.failed.push({ usn, reason: 'Username already exists' });
+                    continue;
+                }
+                // Create user account
+                const username = usn.toLowerCase();
+                const defaultPassword = usn;
+                const hashedPassword = await bcrypt_1.default.hash(defaultPassword, 10);
+                const user = await index_1.prisma.user.create({
+                    data: {
+                        username,
+                        email: student.email || `${username}@placeholder.edu`, // Fallback if email is missing
+                        passwordHash: hashedPassword,
+                        loginType: -1, // Student login type
+                        departmentId: student.departmentId,
+                        isActive: true,
+                        firstLogin: true,
+                        student: {
+                            connect: {
+                                usn
+                            }
+                        }
+                    },
+                    select: {
+                        id: true,
+                        username: true,
+                        loginType: true,
+                        isActive: true,
+                        firstLogin: true
+                    }
+                });
+                results.success.push({
+                    usn,
+                    userId: user.id,
+                    username: user.username,
+                    defaultPassword
+                });
+            }
+            catch (error) {
+                console.error(`Error creating login for student ${usn}:`, error);
+                results.failed.push({
+                    usn,
+                    reason: error.message || 'Internal error'
+                });
+            }
+        }
+        res.status(200).json({
+            success: true,
+            message: `Created ${results.success.length} student logins, ${results.failed.length} failed`,
+            data: results
+        });
+    }
+    catch (error) {
+        console.error('Create student logins error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+exports.createMultipleStudentLogins = createMultipleStudentLogins;
+// New function to get students without logins
+const getStudentsWithoutLogins = async (req, res) => {
+    try {
+        const { departmentId, batchId, search } = req.query;
+        let whereClause = {
+            userId: null // Only fetch students without user accounts
+        };
+        // Add optional filters
+        if (departmentId) {
+            whereClause.departmentId = parseInt(departmentId);
+        }
+        if (batchId) {
+            whereClause.batchId = batchId;
+        }
+        if (search) {
+            whereClause.OR = [
+                { usn: { contains: search } },
+                { firstName: { contains: search } },
+                { lastName: { contains: search } },
+                { email: { contains: search } }
+            ];
+        }
+        const students = await index_1.prisma.student.findMany({
+            where: whereClause,
+            include: {
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                        code: true
+                    }
+                },
+                batch: {
+                    select: {
+                        id: true,
+                        name: true,
+                        academicYear: true
+                    }
+                }
+            },
+            orderBy: { usn: 'asc' }
+        });
+        res.json({
+            success: true,
+            data: {
+                students,
+                count: students.length
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error fetching students without logins:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+exports.getStudentsWithoutLogins = getStudentsWithoutLogins;
 const updateStudent = async (req, res) => {
     try {
+        // Remove dob from req.body if missing, empty, or invalid
+        if ('dob' in req.body && (!req.body.dob || isNaN(new Date(req.body.dob).getTime()))) {
+            delete req.body.dob;
+        }
+        console.log('REQ.BODY BEFORE PRISMA:', req.body);
         const { usn } = req.params;
         const { firstName, middleName, lastName, email, phone, dob, gender, address, batchId, departmentId, semester, section, fatherName, motherName, guardianName, guardianContact } = req.body;
         // Check if student exists
@@ -230,7 +405,7 @@ const updateStudent = async (req, res) => {
                 lastName,
                 email,
                 phone,
-                dob: dob ? new Date(dob) : undefined,
+                dob: dob && !isNaN(new Date(dob).getTime()) ? new Date(dob) : undefined,
                 gender,
                 address,
                 batchId,
@@ -247,8 +422,7 @@ const updateStudent = async (req, res) => {
                     select: {
                         id: true,
                         name: true,
-                        startYear: true,
-                        endYear: true
+                        academicYear: true
                     }
                 },
                 department: {
@@ -319,7 +493,7 @@ const getStudents = async (req, res) => {
             filterConditions.departmentId = parseInt(departmentId);
         }
         if (batchId) {
-            filterConditions.batchId = parseInt(batchId);
+            filterConditions.batchId = batchId;
         }
         if (semester) {
             filterConditions.semester = parseInt(semester);
@@ -360,7 +534,8 @@ const getStudents = async (req, res) => {
                 batch: {
                     select: {
                         id: true,
-                        name: true
+                        name: true,
+                        academicYear: true
                     }
                 },
                 department: {
@@ -373,7 +548,28 @@ const getStudents = async (req, res) => {
                 user: {
                     select: {
                         id: true,
-                        isActive: true
+                        isActive: true,
+                        lastLogin: true
+                    }
+                },
+                addresses: {
+                    select: {
+                        type: true,
+                        state: true,
+                        district: true,
+                        houseName: true,
+                        village: true,
+                        pincode: true
+                    }
+                },
+                guardians: {
+                    select: {
+                        type: true,
+                        name: true,
+                        contact: true,
+                        aadhar: true,
+                        panCard: true,
+                        occupation: true
                     }
                 }
             },
@@ -385,10 +581,23 @@ const getStudents = async (req, res) => {
                 { firstName: 'asc' }
             ]
         });
+        // Format student data to include full name and organize related data
+        const formattedStudents = students.map(student => {
+            var _a, _b, _c, _d, _e;
+            return ({
+                ...student,
+                fullName: `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`.trim(),
+                address: ((_a = student.addresses) === null || _a === void 0 ? void 0 : _a.find(addr => addr.type === 'present')) || null,
+                permanentAddress: ((_b = student.addresses) === null || _b === void 0 ? void 0 : _b.find(addr => addr.type === 'permanent')) || null,
+                guardian: ((_c = student.guardians) === null || _c === void 0 ? void 0 : _c.find(g => g.type === 'guardian')) || null,
+                father: ((_d = student.guardians) === null || _d === void 0 ? void 0 : _d.find(g => g.type === 'father')) || null,
+                mother: ((_e = student.guardians) === null || _e === void 0 ? void 0 : _e.find(g => g.type === 'mother')) || null
+            });
+        });
         res.json({
             success: true,
             data: {
-                students,
+                students: formattedStudents,
                 pagination: {
                     total,
                     page: pageNumber,
@@ -408,17 +617,28 @@ const getStudents = async (req, res) => {
 };
 exports.getStudents = getStudents;
 const getStudentByUSN = async (req, res) => {
+    var _a, _b, _c, _d, _e, _f, _g;
     try {
         const { usn } = req.params;
         const student = await index_1.prisma.student.findUnique({
             where: { usn },
-            include: {
+            select: {
+                usn: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                semester: true,
+                section: true,
+                admissionYear: true,
+                departmentId: true,
+                batchId: true,
                 batch: {
                     select: {
                         id: true,
                         name: true,
-                        startYear: true,
-                        endYear: true
+                        academicYear: true
                     }
                 },
                 department: {
@@ -428,12 +648,64 @@ const getStudentByUSN = async (req, res) => {
                         code: true
                     }
                 },
-                user: {
+                addresses: {
                     select: {
-                        id: true,
-                        username: true,
-                        isActive: true,
-                        lastLogin: true
+                        type: true,
+                        state: true,
+                        district: true,
+                        houseName: true,
+                        village: true,
+                        pincode: true
+                    }
+                },
+                guardians: {
+                    select: {
+                        type: true,
+                        name: true,
+                        contact: true,
+                        aadhar: true,
+                        panCard: true,
+                        occupation: true
+                    }
+                },
+                entranceExams: {
+                    select: {
+                        kcetRank: true,
+                        comedkRank: true,
+                        jeeRank: true
+                    }
+                },
+                pucRecord: {
+                    select: {
+                        school: true,
+                        boardUniversity: true,
+                        regNo: true,
+                        year: true,
+                        maxMarks: true,
+                        obtainedMarks: true,
+                        percentage: true,
+                        subTotalMarks: true,
+                        physicsMax: true,
+                        physicsObtained: true,
+                        mathsMax: true,
+                        mathsObtained: true,
+                        chemMax: true,
+                        chemObtained: true,
+                        electiveMax: true,
+                        electiveObtained: true,
+                        englishMax: true,
+                        englishObtained: true
+                    }
+                },
+                sslcRecord: {
+                    select: {
+                        school: true,
+                        boardUniversity: true,
+                        regNo: true,
+                        year: true,
+                        maxMarks: true,
+                        obtainedMarks: true,
+                        percentage: true
                     }
                 }
             }
@@ -444,9 +716,21 @@ const getStudentByUSN = async (req, res) => {
                 message: 'Student not found'
             });
         }
+        // Format the response
+        const formattedStudent = {
+            ...student,
+            fullName: `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`.trim(),
+            address: ((_a = student.addresses) === null || _a === void 0 ? void 0 : _a.find(addr => addr.type === 'present')) || null,
+            permanentAddress: ((_b = student.addresses) === null || _b === void 0 ? void 0 : _b.find(addr => addr.type === 'permanent')) || null,
+            guardian: ((_c = student.guardians) === null || _c === void 0 ? void 0 : _c.find(g => g.type === 'guardian')) || null,
+            father: ((_d = student.guardians) === null || _d === void 0 ? void 0 : _d.find(g => g.type === 'father')) || null,
+            mother: ((_e = student.guardians) === null || _e === void 0 ? void 0 : _e.find(g => g.type === 'mother')) || null,
+            pucDetails: ((_f = student.pucRecord) === null || _f === void 0 ? void 0 : _f[0]) || null, // Get the first PUC record if exists
+            sslcDetails: ((_g = student.sslcRecord) === null || _g === void 0 ? void 0 : _g[0]) || null // Get the first SSLC record if exists
+        };
         res.json({
             success: true,
-            data: student
+            data: formattedStudent
         });
     }
     catch (error) {
@@ -486,13 +770,12 @@ const bulkUploadStudents = async (req, res) => {
         let parsingErrors = [];
         try {
             // Parse the Excel or CSV file
-            const workbook = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true }); // Enable cellDates for DOB
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const workbook = new exceljs_1.default.Workbook();
+            await workbook.xlsx.load(fileBuffer);
+            const worksheet = workbook.getWorksheet(1);
             // Use { raw: false } to get formatted strings, { defval: '' } for empty cells
-            const rawData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
-            // Transform the data to match our student schema
-            studentsData = rawData.map((row, index) => {
-                const rowIndex = index + 2; // Assuming headers are on row 1
+            const rawData = worksheet.getRows(2, worksheet.actualRowCount).map((row) => {
+                const rowIndex = row.number;
                 // Flexible header matching (case-insensitive, common variations)
                 const getRowValue = (keys) => {
                     for (const key of keys) {
@@ -520,7 +803,7 @@ const bulkUploadStudents = async (req, res) => {
                     admissionYear = null;
                 let dob = undefined;
                 if (dobValue) {
-                    // Try parsing common date formats or if XLSX parsed it already
+                    // Try parsing common date formats or if ExcelJS parsed it already
                     const parsedDate = new Date(dobValue);
                     if (!isNaN(parsedDate.getTime())) {
                         // Check if it's a reasonable date (e.g., not epoch 0 if original string was not '0')
@@ -700,26 +983,7 @@ const bulkUploadStudents = async (req, res) => {
                                 guardianContact: student.guardianContact
                             }
                         });
-                        // Create user account
-                        const username = createdStudent.usn.toLowerCase();
-                        const defaultPassword = `${username}@${createdStudent.admissionYear}`; // Use created student's data
-                        const hashedPassword = await bcrypt_1.default.hash(defaultPassword, 10);
-                        await tx.user.create({
-                            data: {
-                                username,
-                                email: createdStudent.email,
-                                passwordHash: hashedPassword,
-                                loginType: -1, // Student login type
-                                departmentId: createdStudent.departmentId,
-                                isActive: true,
-                                firstLogin: true,
-                                student: {
-                                    connect: {
-                                        usn: createdStudent.usn
-                                    }
-                                }
-                            }
-                        });
+                        // Remove automatic user account creation
                         createdStudentsCount++;
                     }
                     catch (studentError) {
@@ -728,7 +992,7 @@ const bulkUploadStudents = async (req, res) => {
                         creationErrors.push({
                             row: student.originalRowIndex,
                             usn: student.usn,
-                            error: studentError.message || 'Failed to create student or user'
+                            error: studentError.message || 'Failed to create student'
                         });
                         // Important: Re-throw the error to abort the transaction
                         throw studentError;
@@ -738,7 +1002,7 @@ const bulkUploadStudents = async (req, res) => {
             // If transaction succeeded without re-throwing error
             res.status(201).json({
                 success: true,
-                message: `Successfully added ${createdStudentsCount} students.`,
+                message: `Successfully added ${createdStudentsCount} students. You can now create logins for them.`,
                 data: {
                     count: createdStudentsCount
                 }
@@ -765,3 +1029,243 @@ const bulkUploadStudents = async (req, res) => {
     }
 };
 exports.bulkUploadStudents = bulkUploadStudents;
+// Function to handle Excel file upload and student data import
+const importStudentsFromExcel = async (req, res) => {
+    try {
+        if (!req.file) {
+            throw new errors_1.BadRequestError('No file uploaded');
+        }
+        const workbook = new exceljs_1.default.Workbook();
+        await workbook.xlsx.load(req.file.buffer);
+        const worksheet = workbook.getWorksheet(1);
+        if (!worksheet) {
+            throw new errors_1.BadRequestError('Excel file is empty or invalid');
+        }
+        const students = [];
+        worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+            if (rowNumber === 1)
+                return; // Skip header row
+            const student = {
+                usn: ((_a = row.getCell(1).value) === null || _a === void 0 ? void 0 : _a.toString()) || '',
+                firstName: ((_b = row.getCell(2).value) === null || _b === void 0 ? void 0 : _b.toString()) || '',
+                lastName: ((_c = row.getCell(3).value) === null || _c === void 0 ? void 0 : _c.toString()) || '',
+                email: ((_d = row.getCell(4).value) === null || _d === void 0 ? void 0 : _d.toString()) || '',
+                phone: ((_e = row.getCell(5).value) === null || _e === void 0 ? void 0 : _e.toString()) || '',
+                departmentId: parseInt(((_f = row.getCell(6).value) === null || _f === void 0 ? void 0 : _f.toString()) || '0'),
+                semester: parseInt(((_g = row.getCell(7).value) === null || _g === void 0 ? void 0 : _g.toString()) || '1'),
+                section: ((_h = row.getCell(8).value) === null || _h === void 0 ? void 0 : _h.toString()) || '',
+                admissionYear: parseInt(((_j = row.getCell(9).value) === null || _j === void 0 ? void 0 : _j.toString()) || '0'),
+            };
+            // Validate student data
+            const validationResult = (0, validation_1.validateStudent)(student);
+            if (!validationResult.success) {
+                throw new errors_1.BadRequestError(`Invalid data in row ${rowNumber}: ${validationResult.error}`);
+            }
+            students.push(student);
+        });
+        // Bulk create students
+        const result = await index_1.prisma.student.createMany({
+            data: students,
+            skipDuplicates: true,
+        });
+        res.json({
+            success: true,
+            message: `Successfully imported ${result.count} students`,
+            data: result
+        });
+    }
+    catch (error) {
+        if (error instanceof errors_1.ApiError) {
+            throw error;
+        }
+        throw new errors_1.BadRequestError('Failed to process Excel file: ' + error.message);
+    }
+};
+exports.importStudentsFromExcel = importStudentsFromExcel;
+// Function to export student data to Excel
+const exportStudentsToExcel = async (req, res) => {
+    try {
+        const students = await index_1.prisma.student.findMany({
+            include: {
+                department: true,
+            }
+        });
+        const workbook = new exceljs_1.default.Workbook();
+        const worksheet = workbook.addWorksheet('Students');
+        // Add headers
+        worksheet.columns = [
+            { header: 'USN', key: 'usn', width: 15 },
+            { header: 'First Name', key: 'firstName', width: 20 },
+            { header: 'Last Name', key: 'lastName', width: 20 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Phone', key: 'phone', width: 15 },
+            { header: 'Department', key: 'department', width: 20 },
+            { header: 'Semester', key: 'semester', width: 10 },
+            { header: 'Section', key: 'section', width: 10 },
+            { header: 'Admission Year', key: 'admissionYear', width: 15 }
+        ];
+        // Add data
+        students.forEach(student => {
+            var _a;
+            worksheet.addRow({
+                usn: student.usn,
+                firstName: student.firstName,
+                lastName: student.lastName,
+                email: student.email,
+                phone: student.phone,
+                department: ((_a = student.department) === null || _a === void 0 ? void 0 : _a.name) || 'N/A',
+                semester: student.semester,
+                section: student.section,
+                admissionYear: student.admissionYear
+            });
+        });
+        // Style the header row
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+        // Generate Excel file
+        const buffer = await workbook.xlsx.writeBuffer();
+        // Set response headers
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=students.xlsx');
+        res.send(buffer);
+    }
+    catch (error) {
+        throw new errors_1.BadRequestError('Failed to export students: ' + error.message);
+    }
+};
+exports.exportStudentsToExcel = exportStudentsToExcel;
+// Delete student
+const deleteStudent = async (req, res) => {
+    try {
+        const { usn } = req.params;
+        // Check if student exists
+        const student = await index_1.prisma.student.findUnique({
+            where: {
+                usn
+            },
+            include: {
+                user: {
+                    include: {
+                        auditlog: true,
+                        displaypic: true,
+                        studentcomponentmark: true
+                    }
+                },
+                studentcomponentmark: true,
+                mark: true,
+                attendanceentry: true,
+                addresses: true,
+                guardians: true,
+                entranceExams: true,
+                pucRecord: true,
+                sslcRecord: true
+            }
+        });
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: 'Student not found'
+            });
+        }
+        // Delete student and associated records using a transaction
+        await index_1.prisma.$transaction(async (prisma) => {
+            // First, delete all user-related records if user exists
+            if (student.user) {
+                // Delete audit logs
+                if (student.user.auditlog.length > 0) {
+                    await prisma.auditlog.deleteMany({
+                        where: { userId: student.user.id }
+                    });
+                }
+                // Delete display picture
+                if (student.user.displaypic) {
+                    await prisma.displaypic.delete({
+                        where: { userId: student.user.id }
+                    });
+                }
+                // Delete student component marks recorded by this user
+                if (student.user.studentcomponentmark.length > 0) {
+                    await prisma.studentcomponentmark.updateMany({
+                        where: { recordedBy: student.user.id },
+                        data: { recordedBy: null }
+                    });
+                }
+            }
+            // Delete student-related records
+            if (student.studentcomponentmark.length > 0) {
+                await prisma.studentcomponentmark.deleteMany({
+                    where: { usn: usn }
+                });
+            }
+            if (student.mark.length > 0) {
+                await prisma.mark.deleteMany({
+                    where: { usn: usn }
+                });
+            }
+            if (student.attendanceentry.length > 0) {
+                await prisma.attendanceentry.deleteMany({
+                    where: { usn: usn }
+                });
+            }
+            if (student.addresses.length > 0) {
+                await prisma.studentAddress.deleteMany({
+                    where: { usn: usn }
+                });
+            }
+            if (student.guardians.length > 0) {
+                await prisma.studentGuardian.deleteMany({
+                    where: { usn: usn }
+                });
+            }
+            if (student.entranceExams.length > 0) {
+                await prisma.studentEntranceExam.deleteMany({
+                    where: { usn: usn }
+                });
+            }
+            if (student.pucRecord.length > 0) {
+                await prisma.studentPucRecord.deleteMany({
+                    where: { usn: usn }
+                });
+            }
+            if (student.sslcRecord.length > 0) {
+                await prisma.studentSslcRecord.deleteMany({
+                    where: { usn: usn }
+                });
+            }
+            // Delete the student record
+            await prisma.student.delete({
+                where: { usn: usn }
+            });
+            // Finally delete the user account
+            if (student.user) {
+                await prisma.user.delete({
+                    where: { id: student.user.id }
+                });
+            }
+        });
+        res.json({
+            success: true,
+            message: 'Student deleted successfully'
+        });
+    }
+    catch (error) {
+        console.error('Delete student error:', error);
+        // Handle specific Prisma errors
+        if (error.code === 'P2003') {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete student because it is referenced by other records'
+            });
+        }
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete student'
+        });
+    }
+};
+exports.deleteStudent = deleteStudent;

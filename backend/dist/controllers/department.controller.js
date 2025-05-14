@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDepartmentById = exports.getDepartments = exports.updateDepartment = exports.createDepartment = void 0;
+exports.deleteDepartment = exports.getDepartmentById = exports.getDepartments = exports.updateDepartment = exports.createDepartment = void 0;
 const index_1 = require("../index");
 const createDepartment = async (req, res) => {
     try {
-        const { name, code, description, headId } = req.body;
+        const { name, code, description, hodId } = req.body;
         // Check if department code already exists
         const existingDepartment = await index_1.prisma.department.findUnique({
             where: { code }
@@ -15,10 +15,10 @@ const createDepartment = async (req, res) => {
                 message: 'Department code already exists'
             });
         }
-        // If headId is provided, verify the faculty exists
-        if (headId) {
+        // If hodId is provided, verify the faculty exists
+        if (hodId) {
             const faculty = await index_1.prisma.faculty.findUnique({
-                where: { id: headId }
+                where: { id: hodId }
             });
             if (!faculty) {
                 return res.status(400).json({
@@ -32,24 +32,28 @@ const createDepartment = async (req, res) => {
             data: {
                 name,
                 code,
-                description,
-                headId
-            },
-            include: {
-                head: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true
-                    }
-                }
+                hodId
             }
         });
+        // Get the head if it exists for the response
+        let head = null;
+        if (hodId) {
+            head = await index_1.prisma.faculty.findUnique({
+                where: { id: hodId },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            });
+        }
         res.status(201).json({
             success: true,
             message: 'Department created successfully',
-            data: department
+            data: {
+                ...department,
+                head
+            }
         });
     }
     catch (error) {
@@ -64,7 +68,7 @@ exports.createDepartment = createDepartment;
 const updateDepartment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, code, description, headId } = req.body;
+        const { name, code, description, hodId } = req.body;
         // Check if department exists
         const existingDepartment = await index_1.prisma.department.findUnique({
             where: { id: parseInt(id) }
@@ -87,10 +91,10 @@ const updateDepartment = async (req, res) => {
                 });
             }
         }
-        // If headId is provided, verify the faculty exists
-        if (headId) {
+        // If hodId is provided, verify the faculty exists
+        if (hodId) {
             const faculty = await index_1.prisma.faculty.findUnique({
-                where: { id: headId }
+                where: { id: hodId }
             });
             if (!faculty) {
                 return res.status(400).json({
@@ -105,24 +109,28 @@ const updateDepartment = async (req, res) => {
             data: {
                 name,
                 code,
-                description,
-                headId
-            },
-            include: {
-                head: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true
-                    }
-                }
+                hodId
             }
         });
+        // Get the head if it exists for the response
+        let head = null;
+        if (updatedDepartment.hodId) {
+            head = await index_1.prisma.faculty.findUnique({
+                where: { id: updatedDepartment.hodId },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            });
+        }
         res.json({
             success: true,
             message: 'Department updated successfully',
-            data: updatedDepartment
+            data: {
+                ...updatedDepartment,
+                head
+            }
         });
     }
     catch (error) {
@@ -143,8 +151,7 @@ const getDepartments = async (req, res) => {
         const searchCondition = search ? {
             OR: [
                 { name: { contains: search } },
-                { code: { contains: search } },
-                { description: { contains: search } }
+                { code: { contains: search } }
             ]
         } : {};
         // Get total count for pagination
@@ -154,26 +161,34 @@ const getDepartments = async (req, res) => {
         // Get departments with pagination and search
         const departments = await index_1.prisma.department.findMany({
             where: searchCondition,
-            include: {
-                head: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true
-                    }
-                }
-            },
             skip: (pageNumber - 1) * limitNumber,
             take: limitNumber,
             orderBy: {
                 name: 'asc'
             }
         });
+        // Manually fetch department heads to ensure consistent structure
+        const departmentsWithHeads = await Promise.all(departments.map(async (dept) => {
+            let head = null;
+            if (dept.hodId) {
+                head = await index_1.prisma.faculty.findUnique({
+                    where: { id: dept.hodId },
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                });
+            }
+            return {
+                ...dept,
+                head
+            };
+        }));
         res.json({
             success: true,
             data: {
-                departments,
+                departments: departmentsWithHeads,
                 pagination: {
                     total,
                     page: pageNumber,
@@ -198,23 +213,7 @@ const getDepartmentById = async (req, res) => {
         const department = await index_1.prisma.department.findUnique({
             where: { id: parseInt(id) },
             include: {
-                head: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true
-                    }
-                },
-                faculty: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true,
-                        designation: true
-                    }
-                }
+                faculty: true
             }
         });
         if (!department) {
@@ -223,9 +222,24 @@ const getDepartmentById = async (req, res) => {
                 message: 'Department not found'
             });
         }
+        // Get the head if it exists
+        let head = null;
+        if (department.hodId) {
+            head = await index_1.prisma.faculty.findUnique({
+                where: { id: department.hodId },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            });
+        }
         res.json({
             success: true,
-            data: department
+            data: {
+                ...department,
+                head
+            }
         });
     }
     catch (error) {
@@ -237,3 +251,54 @@ const getDepartmentById = async (req, res) => {
     }
 };
 exports.getDepartmentById = getDepartmentById;
+const deleteDepartment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Check if department exists
+        const department = await index_1.prisma.department.findUnique({
+            where: { id: parseInt(id) }
+        });
+        if (!department) {
+            return res.status(404).json({
+                success: false,
+                message: 'Department not found'
+            });
+        }
+        // Check if the department has any associated faculty
+        const facultyCount = await index_1.prisma.faculty.count({
+            where: { departmentId: parseInt(id) }
+        });
+        if (facultyCount > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete department with assigned faculty'
+            });
+        }
+        // Check if the department has any associated students
+        const studentCount = await index_1.prisma.student.count({
+            where: { departmentId: parseInt(id) }
+        });
+        if (studentCount > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete department with assigned students'
+            });
+        }
+        // Delete department
+        await index_1.prisma.department.delete({
+            where: { id: parseInt(id) }
+        });
+        res.json({
+            success: true,
+            message: 'Department deleted successfully'
+        });
+    }
+    catch (error) {
+        console.error('Delete department error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+exports.deleteDepartment = deleteDepartment;

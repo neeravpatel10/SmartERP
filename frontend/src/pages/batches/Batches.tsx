@@ -36,9 +36,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import UpgradeIcon from '@mui/icons-material/Upgrade';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
-import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import api from '../../utils/api';
 
+// Define types locally if not found in ../../types
 interface Department {
   id: number;
   code: string;
@@ -49,11 +49,7 @@ interface Batch {
   id: string;
   name: string;
   academicYear: string;
-  department: {
-    id: number;
-    name: string;
-    code: string;
-  };
+  department: Department;
   currentSemester: number;
   autoRollover: boolean;
   archived: boolean;
@@ -64,7 +60,6 @@ interface Batch {
 }
 
 interface BatchFormData {
-  name: string;
   academicYear: string;
   departmentId: number | '';
   currentSemester: number;
@@ -73,7 +68,6 @@ interface BatchFormData {
 }
 
 const initialFormData: BatchFormData = {
-  name: '',
   academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
   departmentId: '',
   currentSemester: 1,
@@ -83,7 +77,6 @@ const initialFormData: BatchFormData = {
 
 const AllBatches: React.FC = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
   
   const [batches, setBatches] = useState<Batch[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -104,29 +97,23 @@ const AllBatches: React.FC = () => {
   const [rolloverDialogOpen, setRolloverDialogOpen] = useState<boolean>(false);
   const [batchToRollover, setBatchToRollover] = useState<Batch | null>(null);
 
-  // Wrap fetchDepartments in useCallback
   const fetchDepartments = useCallback(async () => {
     try {
-      const response = await axios.get('/api/departments', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
+      const response = await api.get('/departments');
       if (response.data.success) {
         setDepartments(response.data.data.departments);
       }
     } catch (err) {
       console.error('Error fetching departments:', err);
     }
-  }, [token]);
+  }, []);
 
-  // Wrap fetchBatches in useCallback
   const fetchBatches = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await axios.get('/api/batches', {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get('/batches', {
         params: { 
           departmentId: selectedDepartment || undefined,
           search: searchTerm,
@@ -143,7 +130,7 @@ const AllBatches: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, selectedDepartment, searchTerm, showArchived]);
+  }, [selectedDepartment, searchTerm, showArchived]);
 
   useEffect(() => {
     fetchDepartments();
@@ -176,7 +163,6 @@ const AllBatches: React.FC = () => {
 
   const handleEditBatch = (batch: Batch) => {
     setFormData({
-      name: batch.name,
       academicYear: batch.academicYear,
       departmentId: batch.department.id,
       currentSemester: batch.currentSemester,
@@ -200,9 +186,7 @@ const AllBatches: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.delete(`/batches/${batchToDelete.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.delete(`/batches/${batchToDelete.id}`);
       
       if (response.data.success) {
         setSuccess('Batch deleted successfully');
@@ -230,17 +214,15 @@ const AllBatches: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.put(`/batches/${batchToRollover.id}/rollover`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.put(`/batches/${batchToRollover.id}/rollover`);
       
       if (response.data.success) {
-        setSuccess(`Semester rollover successful. Batch is now in semester ${batchToRollover.currentSemester + 1}`);
+        setSuccess('Batch rolled over successfully');
         fetchBatches();
       }
     } catch (err: any) {
       console.error('Error rolling over batch:', err);
-      setError(err.response?.data?.message || 'Failed to rollover batch to next semester');
+      setError(err.response?.data?.message || 'Failed to rollover batch');
     } finally {
       setLoading(false);
       setRolloverDialogOpen(false);
@@ -253,81 +235,43 @@ const AllBatches: React.FC = () => {
     setError(null);
     
     try {
-      const response = await axios.put(
-        `/batches/${batch.id}/archive`, 
-        { archived: !batch.archived },
-        { headers: { Authorization: `Bearer ${token}` }}
-      );
+      const response = await api.put(`/batches/${batch.id}/archive`, {
+        archived: !batch.archived
+      });
       
       if (response.data.success) {
         setSuccess(`Batch ${batch.archived ? 'unarchived' : 'archived'} successfully`);
         fetchBatches();
       }
     } catch (err: any) {
-      console.error('Error archiving/unarchiving batch:', err);
-      setError(err.response?.data?.message || 'Failed to update archive status');
+      console.error('Error toggling archive status:', err);
+      setError(err.response?.data?.message || 'Failed to update batch archive status');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSubmit = async () => {
-    // Validate form
-    if (!formData.name || !formData.academicYear || !formData.departmentId || formData.currentSemester === null) {
-      setError('Please fill in all required fields');
-      return;
-    }
-    
-    // Validate academicYear format
-    if (!/^\d{4}-\d{4}$/.test(formData.academicYear)) {
-      setError('Academic year must be in format YYYY-YYYY');
-      return;
-    }
-    
     setSubmitting(true);
     setError(null);
     
-    const payload = {
-      name: formData.name,
-      academicYear: formData.academicYear,
-      departmentId: formData.departmentId,
-      currentSemester: formData.currentSemester,
-      autoRollover: formData.autoRollover,
-      archived: formData.archived,
-    };
-    
     try {
+      let response;
+      
       if (isEditing && currentBatchId) {
-        // Update existing batch
-        const response = await axios.put(
-          `/batches/${currentBatchId}`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        
-        if (response.data.success) {
-          setSuccess('Batch updated successfully');
-          fetchBatches();
-        }
+        response = await api.put(`/batches/${currentBatchId}`, formData);
       } else {
-        // Create new batch
-        const response = await axios.post(
-          '/batches',
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        
-        if (response.data.success) {
-          setSuccess('Batch created successfully');
-          fetchBatches();
-        }
+        response = await api.post('/batches', formData);
       }
       
-      // Close dialog
-      setDialogOpen(false);
+      if (response.data.success) {
+        setSuccess(`Batch ${isEditing ? 'updated' : 'created'} successfully`);
+        setDialogOpen(false);
+        fetchBatches();
+      }
     } catch (err: any) {
       console.error('Error submitting batch:', err);
-      setError(err.response?.data?.message || 'Failed to save batch');
+      setError(err.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} batch`);
     } finally {
       setSubmitting(false);
     }
@@ -577,7 +521,6 @@ const AllBatches: React.FC = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              
               <Grid item xs={12}>
                 <TextField
                   required
@@ -590,19 +533,6 @@ const AllBatches: React.FC = () => {
                   inputProps={{ pattern: "^\\d{4}-\\d{4}$" }}
                 />
               </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Batch Name"
-                  value={formData.name}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFormChange('name', e.target.value)}
-                  disabled={submitting}
-                  helperText="E.g., 2023 Batch CSE-A"
-                />
-              </Grid>
-              
               <Grid item xs={12}>
                 <TextField
                   required
@@ -610,34 +540,29 @@ const AllBatches: React.FC = () => {
                   label="Current Semester"
                   type="number"
                   value={formData.currentSemester}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                    handleFormChange('currentSemester', parseInt(e.target.value) || 1)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFormChange('currentSemester', parseInt(e.target.value) || 1)}
                   disabled={submitting}
                   InputProps={{ inputProps: { min: 1, max: 8 } }}
                 />
               </Grid>
-              
               <Grid item xs={12}>
                 <FormControlLabel
                   control={
                     <Switch
                       checked={formData.autoRollover}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                        handleFormChange('autoRollover', e.target.checked)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFormChange('autoRollover', e.target.checked)}
                       disabled={submitting}
                     />
                   }
                   label="Enable Auto Rollover"
                 />
               </Grid>
-              
               <Grid item xs={12}>
                 <FormControlLabel
                   control={
                     <Switch
                       checked={formData.archived}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                        handleFormChange('archived', e.target.checked)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFormChange('archived', e.target.checked)}
                       disabled={submitting}
                     />
                   }

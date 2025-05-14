@@ -17,10 +17,11 @@ import marksRoutes from './routes/marks.routes';
 import iaConfigRoutes from './routes/iaConfig.routes';
 import assignmentConfigRoutes from './routes/assignmentConfig.routes';
 import resultsRoutes from './routes/results.routes';
-import reportsRoutes from './routes/reports.routes';
 import profileRoutes from './routes/profile.routes';
 import auditLogRoutes from './routes/auditLog.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import sectionRoutes from './routes/section.routes';
+import facultySubjectMappingRoutes from './routes/facultySubjectMappingRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -28,8 +29,31 @@ dotenv.config();
 // Initialize Prisma Client
 export const prisma = new PrismaClient();
 
+// Verify database connection
+prisma.$connect()
+  .then(() => {
+    console.log('Successfully connected to database');
+  })
+  .catch((error) => {
+    console.error('Failed to connect to database:', error);
+    process.exit(1);
+  });
+
+// Handle Prisma errors
+prisma.$on('query', (e) => {
+  console.log('Query:', e.query);
+  console.log('Duration:', e.duration, 'ms');
+});
+
+prisma.$on('error', (e) => {
+  console.error('Prisma Error:', e);
+});
+
 // Create Express app
 const app = express();
+
+// Trust proxy for correct rate limiting
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(helmet());
@@ -58,15 +82,16 @@ app.use('/api/lifecycle', subjectLifecycleRoutes);
 app.use('/api/batches', batchRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/faculty', facultyRoutes);
+app.use('/api/faculty-subject-mapping', facultySubjectMappingRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/marks', marksRoutes);
 app.use('/api/ia-config', iaConfigRoutes);
 app.use('/api/assignment-config', assignmentConfigRoutes);
 app.use('/api/results', resultsRoutes);
-app.use('/api/reports', reportsRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/sections', sectionRoutes);
 
 // 404 Handler
 app.use((req, res) => {

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../../utils/api';
 
 // Types
 interface User {
@@ -58,41 +58,24 @@ const initialState: AuthState = {
 // Async thunks
 export const login = createAsyncThunk(
   'auth/login',
-  async (credentials: LoginCredentials, { rejectWithValue }) => {
+  async (credentials: LoginCredentials) => {
     try {
-      const response = await axios.post('/api/auth/login', credentials);
-      const { token, user } = response.data;
-      
-      // Store token in localStorage
-      localStorage.setItem('token', token);
-      
-      // Set auth header for future requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      return { token, user };
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to login. Please try again.'
-      );
+      const response = await api.post('/auth/login', credentials);
+      return response.data;
+    } catch (error) {
+      throw error;
     }
   }
 );
 
 export const changePassword = createAsyncThunk(
   'auth/changePassword',
-  async (credentials: ChangePasswordCredentials, { rejectWithValue }) => {
+  async (credentials: ChangePasswordCredentials) => {
     try {
-      const response = await axios.post('/api/auth/change-password', credentials, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
+      const response = await api.post('/auth/change-password', credentials);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to change password. Please try again.'
-      );
+    } catch (error) {
+      throw error;
     }
   }
 );
@@ -101,7 +84,7 @@ export const requestPasswordReset = createAsyncThunk(
   'auth/requestPasswordReset',
   async (payload: PasswordResetRequestPayload, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/auth/forgot-password', payload);
+      const response = await api.post('/auth/forgot-password', payload);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -115,7 +98,7 @@ export const confirmPasswordReset = createAsyncThunk(
   'auth/confirmPasswordReset',
   async (payload: PasswordResetConfirmPayload, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/auth/reset-password', payload);
+      const response = await api.post('/auth/reset-password', payload);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -127,53 +110,21 @@ export const confirmPasswordReset = createAsyncThunk(
 
 export const unlockAccount = createAsyncThunk(
   'auth/unlockAccount',
-  async (payload: UnlockAccountPayload, { rejectWithValue, getState }) => {
+  async (payload: UnlockAccountPayload) => {
     try {
-      const { auth } = getState() as { auth: AuthState };
-      
-      // Ensure we have the auth token
-      if (!auth.token) {
-        return rejectWithValue('No authentication token found');
-      }
-      
-      const response = await axios.post('/api/auth/unlock-account', payload, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
-      
+      const response = await api.post('/auth/unlock-account', payload);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to unlock account. Please try again.'
-      );
+    } catch (error) {
+      throw error;
     }
   }
 );
 
 export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const { auth } = getState() as { auth: AuthState };
-      
-      // Ensure we have the auth token
-      if (!auth.token) {
-        return rejectWithValue('No authentication token found');
-      }
-      
-      const response = await axios.get('/api/auth/me', {
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
-      
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch user data'
-      );
-    }
+  async () => {
+    const response = await api.get('/auth/me');
+    return response.data;
   }
 );
 
@@ -187,7 +138,7 @@ const authSlice = createSlice({
       localStorage.removeItem('token');
       
       // Remove auth header
-      delete axios.defaults.headers.common['Authorization'];
+      delete api.defaults.headers.common['Authorization'];
       
       // Reset state
       state.user = null;
@@ -256,7 +207,7 @@ const authSlice = createSlice({
           state.token = null;
           state.user = null;
           localStorage.removeItem('token');
-          delete axios.defaults.headers.common['Authorization'];
+          delete api.defaults.headers.common['Authorization'];
         }
       })
       

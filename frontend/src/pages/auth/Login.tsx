@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { login, resetError } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Login: React.FC = () => {
   const dispatch = useDispatch();
@@ -18,6 +19,8 @@ const Login: React.FC = () => {
     username: '',
     password: '',
   });
+
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -135,18 +138,29 @@ const Login: React.FC = () => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`appearance-none relative block w-full px-4 py-3 border ${
-                  formErrors.password ? 'border-red-500' : 'border-gray-300'
-                } placeholder-gray-400 text-gray-900 rounded-md focus:outline-none focus:ring-[#b50900] focus:border-[#b50900] focus:z-10 sm:text-base`}
-                placeholder="Enter your password"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`appearance-none relative block w-full px-4 py-3 border ${
+                    formErrors.password ? 'border-red-500' : 'border-gray-300'
+                  } placeholder-gray-400 text-gray-900 rounded-md focus:outline-none focus:ring-[#b50900] focus:border-[#b50900] focus:z-10 sm:text-base`}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 focus:outline-none"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
               {formErrors.password && (
                 <p className="mt-1 text-sm text-red-600">{formErrors.password}</p>
               )}

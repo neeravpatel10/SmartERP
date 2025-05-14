@@ -31,7 +31,7 @@ export const getDepartments = createAsyncThunk(
   'departments/getDepartments',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get('/api/departments');
+      const response = await axios.get('/departments');
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch departments');
@@ -44,7 +44,7 @@ export const getDepartmentById = createAsyncThunk(
   'departments/getDepartmentById',
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/departments/${id}`);
+      const response = await axios.get(`/departments/${id}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch department');
@@ -57,7 +57,7 @@ export const createDepartment = createAsyncThunk(
   'departments/createDepartment',
   async (department: Omit<Department, 'id'>, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/departments', department);
+      const response = await axios.post('/departments', department);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create department');
@@ -70,7 +70,7 @@ export const updateDepartment = createAsyncThunk(
   'departments/updateDepartment',
   async (department: Department, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`/api/departments/${department.id}`, department);
+      const response = await axios.put(`/departments/${department.id}`, department);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update department');
@@ -83,7 +83,7 @@ export const deleteDepartment = createAsyncThunk(
   'departments/deleteDepartment',
   async (id: string, { rejectWithValue }) => {
     try {
-      await axios.delete(`/api/departments/${id}`);
+      await axios.delete(`/departments/${id}`);
       return id;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete department');

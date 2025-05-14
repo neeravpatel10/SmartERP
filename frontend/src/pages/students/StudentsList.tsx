@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -47,10 +47,33 @@ import {
 } from '@mui/icons-material';
 import BreadcrumbsComponent from '../../components/BreadcrumbsComponent';
 
+interface Student {
+  usn: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  semester: number;
+  section: string;
+  department?: {
+    id: number;
+    name: string;
+    code: string;
+  };
+  batch?: {
+    id: string;
+    name: string;
+    academicYear: string;
+  };
+  departmentId: number;
+  batchId: string;
+}
+
 const StudentsList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const students = useSelector(selectStudents);
+  const students = useSelector(selectStudents) as Student[];
   const totalItems = useSelector(selectStudentsTotalItems);
   const loading = useSelector((state: RootState) => state.students.loading);
   const error = useSelector((state: RootState) => state.students.error);
@@ -62,7 +85,7 @@ const StudentsList: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
   const [uploadCount, setUploadCount] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -145,10 +168,8 @@ const StudentsList: React.FC = () => {
       dispatch(bulkUploadStudents(formData))
         .unwrap()
         .then((result) => {
-          // Handle success regardless of response structure
           setUploadSuccess(true);
           
-          // Try to get count from different possible response structures
           if (result && typeof result === 'object') {
             const count = result.count || 
                          (result.data && result.data.count) || 
@@ -157,10 +178,8 @@ const StudentsList: React.FC = () => {
             setUploadCount(count);
           }
           
-          // Refresh the student list
           dispatch(fetchStudents({ page, limit: rowsPerPage, search: searchQuery }));
           
-          // Show success message
           setAlertMessage(`Successfully uploaded ${uploadCount} students`);
           setTimeout(() => setAlertMessage(null), 5000);
         })
@@ -172,7 +191,6 @@ const StudentsList: React.FC = () => {
           setIsUploading(false);
         });
       
-      // Reset the file input
       if (event.target) {
         event.target.value = '';
       }
@@ -289,9 +307,16 @@ const StudentsList: React.FC = () => {
                     </TableRow>
                   ) : (
                     students.map((student) => (
-                      <TableRow key={student.usn}>
+                      <TableRow
+                        key={student.usn}
+                        hover
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/students/${student.usn}`)}
+                      >
                         <TableCell>{student.usn}</TableCell>
-                        <TableCell>{student.name}</TableCell>
+                        <TableCell>
+                          {`${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`.trim()}
+                        </TableCell>
                         <TableCell>{student.email}</TableCell>
                         <TableCell>{student.phone || 'N/A'}</TableCell>
                         <TableCell>{student.department?.name || student.departmentId}</TableCell>
@@ -300,13 +325,19 @@ const StudentsList: React.FC = () => {
                         <TableCell align="center">
                           <IconButton
                             color="primary"
-                            onClick={() => handleEditStudent(student.usn)}
+                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { 
+                              e.stopPropagation(); 
+                              handleEditStudent(student.usn); 
+                            }}
                           >
                             <EditIcon />
                           </IconButton>
                           <IconButton
                             color="error"
-                            onClick={() => handleDeleteConfirmation(student.usn)}
+                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { 
+                              e.stopPropagation(); 
+                              handleDeleteConfirmation(student.usn); 
+                            }}
                           >
                             <DeleteIcon />
                           </IconButton>

@@ -17,14 +17,18 @@ import {
   TextField,
   Typography,
   Alert,
-  CircularProgress
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 interface Faculty {
   id: number;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
   department?: {
@@ -34,11 +38,31 @@ interface Faculty {
   designation: string;
 }
 
+interface Department {
+  id: number;
+  name: string;
+  code?: string;
+}
+
 interface FacultyListResponse {
   success: boolean;
   data: {
     faculty: Faculty[];
     pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  };
+  message?: string;
+}
+
+interface DepartmentListResponse {
+  success: boolean;
+  data: {
+    departments: Department[];
+    pagination?: {
       total: number;
       page: number;
       limit: number;
@@ -57,15 +81,36 @@ const FacultyList: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<number | ''>('');
+
+  const fetchDepartments = async () => {
+    try {
+      console.log('Fetching departments for faculty page...');
+      const response = await api.getCached<DepartmentListResponse>('/departments');
+      
+      if (response?.data?.success && Array.isArray(response.data.data.departments)) {
+        console.log(`Successfully loaded ${response.data.data.departments.length} departments`);
+        setDepartments(response.data.data.departments);
+      } else {
+        console.error('Unexpected departments response format:', response?.data);
+        setDepartments([]);
+      }
+    } catch (err) {
+      console.error('Error fetching departments:', err);
+      setDepartments([]);
+    }
+  };
 
   const fetchFaculty = async () => {
     try {
       setLoading(true);
-      const response = await api.get<FacultyListResponse>('/api/faculty', {
+      const response = await api.get<FacultyListResponse>('/faculty', {
         params: {
           page: page + 1,
           limit: rowsPerPage,
-          search: searchQuery
+          search: searchQuery,
+          departmentId: selectedDepartment || undefined
         }
       });
 
@@ -84,8 +129,12 @@ const FacultyList: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  useEffect(() => {
     fetchFaculty();
-  }, [page, rowsPerPage, searchQuery]);
+  }, [page, rowsPerPage, searchQuery, selectedDepartment, fetchFaculty]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -101,6 +150,11 @@ const FacultyList: React.FC = () => {
     setPage(0);
   };
 
+  const handleDepartmentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedDepartment(event.target.value as number | '');
+    setPage(0);
+  };
+
   const handleAddFaculty = () => {
     navigate('/faculty/add');
   };
@@ -112,7 +166,7 @@ const FacultyList: React.FC = () => {
   const handleDeleteFaculty = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this faculty member?')) {
       try {
-        const response = await api.delete(`/api/faculty/${id}`);
+        const response = await api.delete(`/faculty/${id}`);
         if (response.data.success) {
           fetchFaculty(); // Refresh the list
         } else {
@@ -149,17 +203,39 @@ const FacultyList: React.FC = () => {
 
       <Paper sx={{ width: '100%', mb: 2 }}>
         <Box sx={{ p: 2 }}>
-          <TextField
-            fullWidth
-            label="Search Faculty"
-            variant="outlined"
-            value={searchQuery}
-            onChange={handleSearch}
-            sx={{ mb: 2 }}
-          />
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={8}>
+              <TextField
+                fullWidth
+                label="Search Faculty"
+                variant="outlined"
+                value={searchQuery}
+                onChange={handleSearch}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth variant="outlined">
+                <InputLabel id="department-filter-label">Department</InputLabel>
+                <Select
+                  labelId="department-filter-label"
+                  id="department-filter"
+                  value={selectedDepartment}
+                  onChange={handleDepartmentChange}
+                  label="Department"
+                >
+                  <MenuItem value="">All Departments</MenuItem>
+                  {Array.isArray(departments) && departments.map((dept) => (
+                    <MenuItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
         </Box>
 
-        <TableContainer>
+        <TableContainer sx={{ maxHeight: '500px', overflow: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -188,7 +264,7 @@ const FacultyList: React.FC = () => {
                 faculty.map((member) => (
                   <TableRow key={member.id}>
                     <TableCell>
-                      {member.firstName} {member.lastName}
+                      {member.name}
                     </TableCell>
                     <TableCell>{member.email}</TableCell>
                     <TableCell>{member.phone}</TableCell>

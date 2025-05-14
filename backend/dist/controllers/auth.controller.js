@@ -19,7 +19,7 @@ const login = async (req, res) => {
             where: { username },
             include: {
                 student: true,
-                faculty: true,
+                facultyAccount: true,
                 department: true
             }
         });

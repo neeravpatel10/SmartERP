@@ -272,7 +272,6 @@ export const getFaculty = async (req: Request, res: Response) => {
 
     // Build search and filter conditions
     let whereCondition: any = {};
-    
     if (search) {
       whereCondition.OR = [
         { name: { contains: search as string } },
@@ -281,17 +280,32 @@ export const getFaculty = async (req: Request, res: Response) => {
         { designation: { contains: search as string } }
       ];
     }
-    
     if (departmentId) {
       whereCondition.departmentId = parseInt(departmentId as string);
     }
-
-    // Get total count for pagination
+    
+    // Count total for pagination
     const total = await prisma.faculty.count({
       where: whereCondition
     });
-
-    // Get faculty with pagination, search and filters
+    
+    // Return early if no results
+    if (total === 0) {
+      return res.json({
+        success: true,
+        data: {
+          faculty: [],
+          pagination: {
+            total: 0,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: 0
+          }
+        }
+      });
+    }
+    
+    // Fetch faculty with pagination
     const faculty = await prisma.faculty.findMany({
       where: whereCondition,
       include: {
@@ -309,11 +323,24 @@ export const getFaculty = async (req: Request, res: Response) => {
         name: 'asc'
       }
     });
-
-    res.json({
+    
+    // Format response
+    const facultyList = faculty.map(f => {
+      const nameArray = (f.name || '').split(' ');
+      const firstName = nameArray[0] || '';
+      const lastName = nameArray.length > 1 ? nameArray.slice(1).join(' ') : '';
+      
+      return {
+        ...f,
+        firstName,
+        lastName
+      };
+    });
+    
+    return res.json({
       success: true,
       data: {
-        faculty,
+        faculty: facultyList,
         pagination: {
           total,
           page: pageNumber,
@@ -326,7 +353,8 @@ export const getFaculty = async (req: Request, res: Response) => {
     console.error('Get faculty error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 };

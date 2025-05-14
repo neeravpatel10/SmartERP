@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,360 +7,199 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core User Management
 model User {
-  id                  Int       @id @default(autoincrement())
-  username            String    @unique
-  email               String    @unique
-  passwordHash        String
-  loginType           Int
-  departmentId        Int?
-  isActive            Boolean   @default(true)
-  lastLogin           DateTime?
-  firstLogin          Boolean   @default(true)
-  failedLoginAttempts Int       @default(0)
-  lockedUntil         DateTime?
-  resetToken          String?
-  resetTokenExpiry    DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id                   Int                    @id @default(autoincrement())
+  username             String                 @unique(map: "User_username_key")
+  email                String                 @unique(map: "User_email_key")
+  passwordHash         String
+  loginType            Int
+  departmentId         Int?
+  isActive             Boolean                @default(true)
+  lastLogin            DateTime?
+  firstLogin           Boolean                @default(true)
+  failedLoginAttempts  Int                    @default(0)
+  lockedUntil          DateTime?
+  resetToken           String?
+  resetTokenExpiry     DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  auditlog             auditlog[]
+  displaypic           displaypic?
+  facultyAccount       Faculty?               @relation("UserToFaculty")
+  student              Student?               @relation("UserToStudent")
+  studentcomponentmark studentcomponentmark[]
+  department           Department?            @relation(fields: [departmentId], references: [id], map: "User_departmentId_fkey")
 
-  department     Department?            @relation(fields: [departmentId], references: [id])
-  displaypic     DisplayPic?
-  faculty        Faculty?               @relation("FacultyUser", fields: [username], references: [email])
-  student        Student?               @relation("UserToStudent")
-  facultyAccount Faculty?               @relation("UserToFaculty")
-  auditLogs      AuditLog[]
-  recordedMarks  StudentComponentMark[] @relation("RecordedMarksByUser")
-
+  @@index([departmentId], map: "User_departmentId_fkey")
   @@map("user")
 }
 
-// Academic Structure
 model Department {
-  id        Int      @id @default(autoincrement())
-  code      String   @unique
-  name      String
-  hodId     String? // This refers to faculty.id (which is a String in your schema)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                                Int       @id @default(autoincrement())
+  code                              String    @unique(map: "Department_code_key")
+  name                              String
+  hodId                             String?
+  createdAt                         DateTime  @default(now())
+  updatedAt                         DateTime  @updatedAt
+  faculty_department_hodIdTofaculty Faculty?  @relation("department_hodIdTofaculty", fields: [hodId], references: [id], map: "Department_hodId_fkey")
+  faculty                           Faculty[]
+  section                           section[]
+  students                          Student[]
+  subject                           subject[]
+  users                             User[]
+  batches                           batch[]
 
-  users    User[]
-  faculty  Faculty[]
-  subjects Subject[]
-  students Student[]
-  batches  Batch[]
-
+  @@index([hodId], map: "Department_hodId_fkey")
   @@map("department")
 }
 
-model SubjectCategory {
-  id            Int       @id @default(autoincrement())
-  code          String    @unique // e.g., "IPCC"
-  name          String
-  description   String?
-  markingSchema Json? // Configurable component structure
-  subjects      Subject[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-model Subject {
-  id                 Int                     @id @default(autoincrement())
-  code               String                  @unique
-  name               String
-  semester           Int
-  credits            Int
-  isLab              Boolean                 @default(false)
-  department         Department              @relation(fields: [departmentId], references: [id])
-  departmentId       Int
-  category           SubjectCategory?        @relation(fields: [categoryId], references: [id])
-  categoryId         Int?
-  status             SubjectStatus           @default(draft)
-  lockedAt           DateTime?
-  archivedAt         DateTime?
-  schemeYear         Int?
-  facultyMappings    FacultySubjectMapping[]
-  attendanceSessions AttendanceSession[]
-  examComponents     ExamComponent[]
-  marks              Mark[]
-  statusLogs         SubjectStatusLog[]
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-}
-
-enum SubjectStatus {
-  draft
-  active
-  locked
-  archived
-}
-
-model SubjectStatusLog {
-  id        Int           @id @default(autoincrement())
-  subject   Subject       @relation(fields: [subjectId], references: [id])
-  subjectId Int
-  status    SubjectStatus
-  changedBy Int
-  timestamp DateTime      @default(now())
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-}
-
-model Batch {
-  id                 String                  @id @default(cuid())
-  name               String
-  academicYear       String
-  departmentId       Int
-  currentSemester    Int                     @default(1)
-  autoRollover       Boolean                 @default(false)
-  archived           Boolean                 @default(false)
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  department         Department              @relation(fields: [departmentId], references: [id])
-  students           Student[]
-  facultyMappings    FacultySubjectMapping[]
-  attendanceSessions AttendanceSession[]
-
-  @@unique([name, academicYear, departmentId])
-}
-
-// Student & Faculty Models
 model Student {
-  usn             String                 @id
-  firstName       String
-  middleName      String?
-  lastName        String
-  email           String                 @unique
-  phone           String
-  dob             DateTime?
-  gender          String?
-  address         String?
-  batch           Batch                  @relation(fields: [batchId], references: [id])
-  batchId         String
-  department      Department             @relation(fields: [departmentId], references: [id])
-  departmentId    Int
-  semester        Int
-  section         String
-  admissionYear   Int
-  fatherName      String?
-  motherName      String?
-  guardianName    String?
-  guardianContact String?
-  user            User?                  @relation("UserToStudent", fields: [userId], references: [id])
-  userId          Int?                   @unique
-  attendance      AttendanceEntry[]
-  componentMarks  StudentComponentMark[]
-  marks           Mark[]
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  usn                  String                 @id @db.VarChar(20)
+  firstName            String
+  middleName           String?
+  lastName             String
+  email                String?
+  phone                String
+  dob                  DateTime?
+  gender               String?
+  batchId              String
+  departmentId         Int
+  semester             Int
+  section              String
+  admissionYear        Int
+  userId               Int?                   @unique(map: "Student_userId_key")
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  attendanceentry      attendanceentry[]
+  mark                 mark[]
+  batch                batch                  @relation(fields: [batchId], references: [id], map: "Student_batchId_fkey")
+  department           Department             @relation(fields: [departmentId], references: [id], map: "Student_departmentId_fkey")
+  user                 User?                  @relation("UserToStudent", fields: [userId], references: [id], map: "Student_userId_fkey")
+  addresses            StudentAddress[]
+  entranceExams        StudentEntranceExam[]
+  guardians            StudentGuardian[]
+  pucRecord            StudentPucRecord[]
+  sslcRecord           StudentSslcRecord[]
+  studentcomponentmark studentcomponentmark[]
+
+  @@index([batchId], map: "Student_batchId_fkey")
+  @@index([departmentId], map: "Student_departmentId_fkey")
+  @@map("student")
+}
+
+model StudentGuardian {
+  id         Int          @id @default(autoincrement())
+  usn        String       @db.VarChar(20)
+  type       GuardianType
+  name       String?
+  contact    String?      @db.VarChar(20)
+  createdAt  DateTime?    @default(now()) @db.DateTime(0)
+  updatedAt  DateTime?    @default(now()) @updatedAt @db.DateTime(0)
+  aadhar     String?      @db.VarChar(20)
+  panCard    String?      @db.VarChar(30)
+  occupation String?      @db.VarChar(100)
+  student    Student      @relation(fields: [usn], references: [usn], onDelete: Cascade, map: "FK_StudentGuardian_usn")
+
+  @@index([usn], map: "FK_StudentGuardian_usn")
+  @@map("student_guardian")
+}
+
+model StudentAddress {
+  id        Int         @id @default(autoincrement())
+  usn       String      @db.VarChar(20)
+  type      AddressType
+  state     String?     @db.VarChar(50)
+  district  String?     @db.VarChar(50)
+  houseName String?     @db.VarChar(150)
+  village   String?     @db.VarChar(100)
+  pincode   String?     @db.VarChar(30)
+  createdAt DateTime?   @default(now()) @db.DateTime(0)
+  updatedAt DateTime?   @default(now()) @updatedAt @db.DateTime(0)
+  student   Student     @relation(fields: [usn], references: [usn], onDelete: Cascade, map: "FK_StudentAddress_usn")
+
+  @@index([usn], map: "FK_StudentAddress_usn")
+  @@map("student_address")
+}
+
+model StudentEntranceExam {
+  id         Int       @id @default(autoincrement())
+  usn        String    @db.VarChar(20)
+  kcetRank   String?   @db.VarChar(30)
+  comedkRank String?   @db.VarChar(30)
+  jeeRank    String?   @db.VarChar(30)
+  createdAt  DateTime? @default(now()) @db.DateTime(0)
+  student    Student   @relation(fields: [usn], references: [usn], onDelete: Cascade, map: "FK_StudentEntrance_usn")
+
+  @@index([usn], map: "FK_StudentEntrance_usn")
+  @@map("student_entrance_exam")
+}
+
+model StudentPucRecord {
+  id               Int       @id @default(autoincrement())
+  usn              String    @db.VarChar(20)
+  school           String?   @db.VarChar(100)
+  boardUniversity  String?   @db.VarChar(100)
+  regNo            String?   @db.VarChar(30)
+  year             String?   @db.VarChar(10)
+  maxMarks         String?   @db.VarChar(10)
+  obtainedMarks    String?   @db.VarChar(10)
+  percentage       String?   @db.VarChar(10)
+  subTotalMarks    String?   @db.VarChar(10)
+  physicsMax       String?   @db.VarChar(10)
+  physicsObtained  String?   @db.VarChar(10)
+  mathsMax         String?   @db.VarChar(10)
+  mathsObtained    String?   @db.VarChar(10)
+  chemMax          String?   @db.VarChar(10)
+  chemObtained     String?   @db.VarChar(10)
+  electiveMax      String?   @db.VarChar(10)
+  electiveObtained String?   @db.VarChar(10)
+  englishMax       String?   @db.VarChar(10)
+  englishObtained  String?   @db.VarChar(10)
+  createdAt        DateTime? @default(now()) @db.DateTime(0)
+  updatedAt        DateTime? @default(now()) @updatedAt @db.DateTime(0)
+  student          Student   @relation(fields: [usn], references: [usn], onDelete: Cascade, onUpdate: Restrict, map: "student_puc_record_ibfk_1")
+
+  @@index([usn], map: "usn")
+  @@map("student_puc_record")
+}
+
+model StudentSslcRecord {
+  id              Int       @id @default(autoincrement())
+  usn             String    @db.VarChar(20)
+  school          String?   @db.VarChar(100)
+  boardUniversity String?   @db.VarChar(100)
+  regNo           String?   @db.VarChar(30)
+  year            String?   @db.VarChar(10)
+  maxMarks        String?   @db.VarChar(10)
+  obtainedMarks   String?   @db.VarChar(10)
+  percentage      String?   @db.VarChar(10)
+  createdAt       DateTime? @default(now()) @db.DateTime(0)
+  updatedAt       DateTime? @default(now()) @updatedAt @db.DateTime(0)
+  student         Student   @relation(fields: [usn], references: [usn], onDelete: Cascade, onUpdate: Restrict, map: "student_sslc_record_ibfk_1")
+
+  @@index([usn], map: "usn")
+  @@map("student_sslc_record")
 }
 
 model Faculty {
-  id                 String   @id
-  name               String?
-  email              String   @unique
-  phone              String?
-  designation        String?
-  gender             String?
-  qualification      String?
-  departmentId       Int?
-  userId             Int?     @unique
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  aicteId            String?
-  dateOfBirth        String? // Can be changed to DateTime? if you clean the format
-  industryExperience String?
-  isActive           Boolean  @default(true)
-  permanentAddress   String?
-  prefix             String?
-  presentAddress     String?
-  teachingExperience String?
-  yearOfJoining      String?
+  id                                   String                  @id
+  name                                 String?
+  email                                String                  @unique(map: "Faculty_email_key")
+  phone                                String?
+  designation                          String?
+  departmentId                         Int?
+  createdAt                            DateTime                @default(now())
+  updatedAt                            DateTime                @updatedAt
+  department                           Department?             @relation(fields: [departmentId], references: [id], map: "Faculty_departmentId_fkey")
+  department_hodIdTofaculty           Department?             @relation("department_hodIdTofaculty")
+  user                                 User?                   @relation("UserToFaculty", fields: [id], references: [id], map: "Faculty_id_fkey")
+  student                              Student?                @relation("FacultyToStudent")
+  facultySubjectMappings               FacultySubjectMapping[]
+  studentcomponentmark                 studentcomponentmark[]
+  studentcomponentmark_facultyIdTofaculty studentcomponentmark[] @relation("studentcomponentmark_facultyIdTofaculty")
 
-  department         Department?             @relation(fields: [departmentId], references: [id])
-  user               User?                   @relation("UserToFaculty", fields: [userId], references: [id])
-  userByEmail        User?                   @relation("FacultyUser")
-  subjectMappings    FacultySubjectMapping[]
-  attendanceSessions AttendanceSession[]
-
+  @@index([departmentId], map: "Faculty_departmentId_fkey")
   @@map("faculty")
-}
-
-// Faculty-Subject Mapping
-model FacultySubjectMapping {
-  id              Int           @id @default(autoincrement())
-  faculty         Faculty       @relation(fields: [facultyId], references: [id])
-  facultyId       String // Changed from Int to String to match Faculty.id
-  subject         Subject       @relation(fields: [subjectId], references: [id])
-  subjectId       Int
-  section         String?
-  semester        Int
-  batch           Batch         @relation(fields: [batchId], references: [id])
-  batchId         String
-  academicYear    String
-  componentScope  String        @default("theory") // theory, lab, both
-  isPrimary       Boolean       @default(true)
-  active          Boolean       @default(true)
-  status          MappingStatus @default(pending)
-  approvedBy      Int?
-  approvedAt      DateTime?
-  rejectionReason String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  @@unique([facultyId, subjectId, section, academicYear])
-}
-
-enum MappingStatus {
-  pending
-  approved
-  rejected
-}
-
-// Attendance Management
-model AttendanceSession {
-  id             Int               @id @default(autoincrement())
-  subject        Subject           @relation(fields: [subjectId], references: [id])
-  subjectId      Int
-  faculty        Faculty?          @relation(fields: [facultyId], references: [id])
-  facultyId      String? // Changed from Int? to String? to match Faculty.id
-  attendanceDate DateTime
-  sessionSlot    Int
-  duration       Int               @default(1) // For labs, can be 3
-  academicYear   String
-  semester       Int
-  section        String?
-  batch          Batch?            @relation(fields: [batchId], references: [id])
-  batchId        String?
-  entries        AttendanceEntry[]
-  markedAt       DateTime          @default(now())
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-
-  @@unique([subjectId, attendanceDate, sessionSlot])
-}
-
-model AttendanceEntry {
-  id        Int               @id @default(autoincrement())
-  session   AttendanceSession @relation(fields: [sessionId], references: [id])
-  sessionId Int
-  student   Student           @relation(fields: [usn], references: [usn])
-  usn       String
-  status    String // Present, Absent, OD, Leave
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-
-  @@unique([sessionId, usn])
-}
-
-// Marks Management
-model ExamComponent {
-  id                Int                    @id @default(autoincrement())
-  subject           Subject                @relation(fields: [subjectId], references: [id])
-  subjectId         Int
-  name              String
-  componentType     String // CIE, Assignment, Lab, Project, Viva, Other
-  maxMarks          Float
-  weightagePercent  Float?
-  isCustom          Boolean                @default(false)
-  studentMarks      StudentComponentMark[]
-  iaConfigs         IAQuestionConfig[]     @relation("ComponentToIAConfig")
-  assignmentConfigs AssignmentConfig[]     @relation("ComponentToAssignmentConfig")
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-
-  @@unique([subjectId, name])
-}
-
-model StudentComponentMark {
-  id            Int           @id @default(autoincrement())
-  student       Student       @relation(fields: [usn], references: [usn])
-  usn           String
-  component     ExamComponent @relation(fields: [componentId], references: [id])
-  componentId   Int
-  marksObtained Float
-  recordedBy    Int? // User ID of faculty who recorded the marks
-  recorder      User?         @relation("RecordedMarksByUser", fields: [recordedBy], references: [id])
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  @@unique([usn, componentId])
-}
-
-model Mark {
-  id            Int      @id @default(autoincrement())
-  student       Student  @relation(fields: [usn], references: [usn])
-  usn           String
-  subject       Subject  @relation(fields: [subjectId], references: [id])
-  subjectId     Int
-  internalTotal Float?
-  academicYear  String
-  semester      Int
-  isCalculated  Boolean  @default(true)
-  calculatedAt  DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@unique([usn, subjectId, academicYear])
-}
-
-// IA Question Configuration
-model IAQuestionConfig {
-  id             Int           @id @default(autoincrement())
-  component      ExamComponent @relation("ComponentToIAConfig", fields: [componentId], references: [id])
-  componentId    Int
-  questionNumber Int
-  subpart        String? // e.g., "a", "b", "c"
-  part           String? // e.g., "A", "B"
-  maxMarks       Float
-  createdBy      Int // User ID of faculty who created the config
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  @@unique([componentId, questionNumber, subpart])
-}
-
-// Assignment Configuration
-model AssignmentConfig {
-  id          Int           @id @default(autoincrement())
-  component   ExamComponent @relation("ComponentToAssignmentConfig", fields: [componentId], references: [id])
-  componentId Int
-  name        String // e.g., "Assignment 1", "Assignment 2"
-  maxMarks    Float
-  weightage   Float?
-  createdBy   Int // User ID of faculty who created the config
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  @@unique([componentId, name])
-}
-
-// Profile Pictures
-model DisplayPic {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     Int      @unique
-  filePath   String
-  isActive   Boolean  @default(true)
-  uploadedAt DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
-// Audit Logging
-model AuditLog {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     Int
-  action     String
-  entityType String
-  entityId   String
-  oldValue   Json?
-  newValue   Json?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
 }
 
 model LegacyFacultyDetails {
@@ -379,4 +215,329 @@ model LegacyFacultyDetails {
   faculty_parmenent_address String?
 
   @@map("faculty_details")
+}
+
+model attendanceentry {
+  id                Int               @id @default(autoincrement())
+  sessionId         Int
+  usn               String
+  status            String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime
+  attendancesession AttendanceSession @relation(fields: [sessionId], references: [id], map: "AttendanceEntry_sessionId_fkey")
+  student           Student           @relation(fields: [usn], references: [usn], onDelete: Cascade, map: "AttendanceEntry_usn_fkey")
+
+  @@unique([sessionId, usn], map: "AttendanceEntry_sessionId_usn_key")
+  @@index([usn], map: "AttendanceEntry_usn_fkey")
+}
+
+model AttendanceSession {
+  id              Int               @id @default(autoincrement())
+  subjectId       Int
+  facultyId       String?
+  attendanceDate  DateTime
+  sessionSlot     Int
+  duration        Int               @default(1)
+  academicYear    String
+  semester        Int
+  section         String?
+  batchId         String?
+  markedAt        DateTime          @default(now())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  attendanceentry attendanceentry[]
+  batch           batch?            @relation(fields: [batchId], references: [id], map: "AttendanceSession_batchId_fkey")
+  faculty         Faculty?          @relation(fields: [facultyId], references: [id], map: "AttendanceSession_facultyId_fkey")
+  subject         subject           @relation(fields: [subjectId], references: [id], map: "AttendanceSession_subjectId_fkey")
+
+  @@unique([subjectId, attendanceDate, sessionSlot], map: "AttendanceSession_subjectId_attendanceDate_sessionSlot_key")
+  @@index([batchId], map: "AttendanceSession_batchId_fkey")
+  @@index([facultyId], map: "AttendanceSession_facultyId_fkey")
+}
+
+model auditlog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  action     String
+  entityType String
+  entityId   String
+  oldValue   String?  @db.LongText
+  newValue   String?  @db.LongText
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], map: "AuditLog_userId_fkey")
+
+  @@index([userId], map: "AuditLog_userId_fkey")
+}
+
+model batch {
+  id              String      @id
+  name            String
+  academicYear    String
+  departmentId    Int
+  currentSemester Int         @default(1)
+  autoRollover    Boolean     @default(false)
+  archived        Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  department      Department  @relation(fields: [departmentId], references: [id])
+  students        Student[]
+  facultyMappings FacultySubjectMapping[]
+  attendanceSessions AttendanceSession[]
+  sections        section[]
+  @@unique([name, academicYear, departmentId])
+}
+
+model displaypic {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique(map: "DisplayPic_userId_key")
+  filePath   String
+  isActive   Boolean  @default(true)
+  uploadedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  user       User     @relation(fields: [userId], references: [id], map: "DisplayPic_userId_fkey")
+}
+
+model examcomponent {
+  id                   Int                    @id @default(autoincrement())
+  subjectId            Int
+  name                 String
+  componentType        String
+  maxMarks             Float
+  weightagePercent     Float?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  isCustom             Boolean                @default(false)
+  subject              subject                @relation(fields: [subjectId], references: [id], map: "ExamComponent_subjectId_fkey")
+  iaquestionconfig     iaquestionconfig[]
+  studentcomponentmark studentcomponentmark[]
+
+  @@unique([subjectId, name], map: "ExamComponent_subjectId_name_key")
+}
+
+model FacultySubjectMapping {
+  id              Int                          @id @default(autoincrement())
+  facultyId       String
+  subjectId       Int
+  section         String?
+  semester        Int
+  batchId         String
+  academicYear    String
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime
+  active          Boolean                      @default(true)
+  componentScope  String                       @default("theory")
+  isPrimary       Boolean                      @default(true)
+  approvedAt      DateTime?
+  approvedBy      Int?
+  rejectionReason String?
+  status          facultysubjectmapping_status @default(pending)
+  batch           batch                        @relation(fields: [batchId], references: [id], map: "FacultySubjectMapping_batchId_fkey")
+  faculty         Faculty                      @relation(fields: [facultyId], references: [id], map: "FacultySubjectMapping_facultyId_fkey")
+  subject         subject                      @relation(fields: [subjectId], references: [id], map: "FacultySubjectMapping_subjectId_fkey")
+
+  @@unique([facultyId, subjectId, section, academicYear], map: "FacultySubjectMapping_facultyId_subjectId_section_academicYe_key")
+  @@index([batchId], map: "FacultySubjectMapping_batchId_fkey")
+  @@index([subjectId], map: "FacultySubjectMapping_subjectId_fkey")
+}
+
+model iaquestionconfig {
+  id             Int           @id @default(autoincrement())
+  componentId    Int
+  questionNumber Int
+  subpart        String?
+  part           String?
+  maxMarks       Float
+  createdBy      Int
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime
+  examcomponent  examcomponent @relation(fields: [componentId], references: [id], map: "IAQuestionConfig_componentId_fkey")
+
+  @@unique([componentId, questionNumber, subpart], map: "IAQuestionConfig_componentId_questionNumber_subpart_key")
+}
+
+model mark {
+  id            Int      @id @default(autoincrement())
+  usn           String
+  subjectId     Int
+  internalTotal Float?
+  academicYear  String
+  semester      Int
+  calculatedAt  DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  isCalculated  Boolean  @default(true)
+  subject       subject  @relation(fields: [subjectId], references: [id], map: "Mark_subjectId_fkey")
+  student       Student  @relation(fields: [usn], references: [usn], onDelete: Cascade, map: "Mark_usn_fkey")
+
+  @@unique([usn, subjectId, academicYear], map: "Mark_usn_subjectId_academicYear_key")
+  @@index([subjectId], map: "Mark_subjectId_fkey")
+}
+
+model section {
+  id                   Int        @id @default(autoincrement())
+  name                 String?    @db.VarChar(10)
+  batchId              String
+  departmentId         Int
+  currentSemester      Int
+  coordinatorFacultyId String?
+  createdAt            DateTime?  @default(now()) @db.DateTime(0)
+  updatedAt            DateTime?  @default(now()) @db.DateTime(0)
+  batch                batch      @relation(fields: [batchId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "FK_Section_Batch")
+  faculty              Faculty?   @relation(fields: [coordinatorFacultyId], references: [id], onUpdate: Restrict, map: "FK_Section_Coordinator")
+  department           Department @relation(fields: [departmentId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "FK_Section_Department")
+
+  @@index([batchId], map: "FK_Section_Batch")
+  @@index([coordinatorFacultyId], map: "FK_Section_Coordinator")
+  @@index([departmentId], map: "FK_Section_Department")
+}
+
+model section_letter_map {
+  sectionIndex Int     @id
+  name         String? @db.VarChar(10)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model student_section_assignment {
+  usn               String? @db.VarChar(20)
+  fname             String? @db.VarChar(100)
+  mname             String? @db.VarChar(100)
+  lname             String? @db.VarChar(100)
+  email_id          String? @db.VarChar(100)
+  mob_no            String? @db.VarChar(20)
+  dob               String? @db.VarChar(30)
+  gender            String? @db.VarChar(10)
+  batch             String? @db.VarChar(10)
+  branch            String? @db.VarChar(100)
+  data_of_admission String? @db.VarChar(30)
+  row_num           Int?
+  sectionIndex      Int?
+  sectionId         Int?
+
+  @@ignore
+}
+
+model studentcomponentmark {
+  id            Int           @id @default(autoincrement())
+  usn           String
+  componentId   Int
+  marksObtained Float
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  recordedBy    Int?
+  examcomponent examcomponent @relation(fields: [componentId], references: [id], map: "StudentComponentMark_componentId_fkey")
+  user          User?         @relation(fields: [recordedBy], references: [id], map: "StudentComponentMark_recordedBy_fkey")
+  student       Student       @relation(fields: [usn], references: [usn], onDelete: Cascade, map: "StudentComponentMark_usn_fkey")
+
+  @@unique([usn, componentId], map: "StudentComponentMark_usn_componentId_key")
+  @@index([componentId], map: "StudentComponentMark_componentId_fkey")
+  @@index([recordedBy], map: "StudentComponentMark_recordedBy_fkey")
+}
+
+model subject {
+  id                    Int                     @id @default(autoincrement())
+  code                  String                  @unique(map: "Subject_code_key")
+  name                  String
+  semester              Int
+  credits               Int
+  isLab                 Boolean                 @default(false)
+  departmentId          Int
+  categoryId            Int?
+  status                subject_status          @default(draft)
+  lockedAt              DateTime?
+  archivedAt            DateTime?
+  schemeYear            Int?
+  section               String?                 @db.VarChar(10)
+  sectionId             Int?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  attendancesession     AttendanceSession[]
+  examcomponent         examcomponent[]
+  facultysubjectmapping FacultySubjectMapping[]
+  mark                  mark[]
+  subjectcategory       subjectcategory?        @relation(fields: [categoryId], references: [id], map: "Subject_categoryId_fkey")
+  department            Department              @relation(fields: [departmentId], references: [id], map: "Subject_departmentId_fkey")
+  sectionRelation       section?                @relation(fields: [sectionId], references: [id], map: "Subject_sectionId_fkey")
+  subjectstatuslog      subjectstatuslog[]
+
+  @@unique([code, departmentId, semester, schemeYear, sectionId], map: "Subject_code_dept_sem_scheme_section_key")
+  @@index([categoryId], map: "Subject_categoryId_fkey")
+  @@index([departmentId], map: "Subject_departmentId_fkey")
+  @@index([sectionId], map: "Subject_sectionId_fkey")
+}
+
+model subjectcategory {
+  id            Int       @id @default(autoincrement())
+  code          String    @unique(map: "SubjectCategory_code_key")
+  name          String
+  description   String?
+  markingSchema String?   @db.LongText
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  subject       subject[]
+}
+
+model subjectstatuslog {
+  id        Int                     @id @default(autoincrement())
+  subjectId Int
+  status    subjectstatuslog_status
+  changedBy Int
+  timestamp DateTime                @default(now())
+  createdAt DateTime                @default(now())
+  updatedAt DateTime
+  subject   subject                 @relation(fields: [subjectId], references: [id], map: "SubjectStatusLog_subjectId_fkey")
+
+  @@index([subjectId], map: "SubjectStatusLog_subjectId_fkey")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model temp_section_assignments {
+  usn               String? @db.VarChar(20)
+  fname             String? @db.VarChar(100)
+  mname             String? @db.VarChar(100)
+  lname             String? @db.VarChar(100)
+  email_id          String? @db.VarChar(100)
+  mob_no            String? @db.VarChar(20)
+  dob               String? @db.VarChar(30)
+  gender            String? @db.VarChar(10)
+  batch             String? @db.VarChar(10)
+  branch            String? @db.VarChar(100)
+  data_of_admission String? @db.VarChar(30)
+  row_num           Int?
+  assigned_section  String? @db.VarChar(10)
+
+  @@ignore
+}
+
+enum GuardianType {
+  father
+  mother
+  guardian
+}
+
+enum AddressType {
+  present
+  permanent
+}
+
+enum subjectstatuslog_status {
+  draft
+  active
+  locked
+  archived
+}
+
+enum subject_status {
+  draft
+  active
+  locked
+  archived
+}
+
+enum facultysubjectmapping_status {
+  pending
+  approved
+  rejected
 }

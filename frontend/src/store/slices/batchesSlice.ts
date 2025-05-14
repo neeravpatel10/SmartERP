@@ -32,7 +32,7 @@ export const getBatches = createAsyncThunk(
   'batches/getBatches',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get('/api/batches');
+      const response = await axios.get('/batches');
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch batches');
@@ -45,7 +45,7 @@ export const getBatchById = createAsyncThunk(
   'batches/getBatchById',
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/batches/${id}`);
+      const response = await axios.get(`/batches/${id}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch batch');
@@ -58,7 +58,7 @@ export const createBatch = createAsyncThunk(
   'batches/createBatch',
   async (batch: Omit<Batch, 'id'>, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/batches', batch);
+      const response = await axios.post('/batches', batch);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create batch');
@@ -71,7 +71,7 @@ export const updateBatch = createAsyncThunk(
   'batches/updateBatch',
   async (batch: Batch, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`/api/batches/${batch.id}`, batch);
+      const response = await axios.put(`/batches/${batch.id}`, batch);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update batch');
@@ -84,7 +84,7 @@ export const deleteBatch = createAsyncThunk(
   'batches/deleteBatch',
   async (id: string, { rejectWithValue }) => {
     try {
-      await axios.delete(`/api/batches/${id}`);
+      await axios.delete(`/batches/${id}`);
       return id;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete batch');
