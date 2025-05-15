@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api from '../../utils/api';
 import {
   Box,
@@ -75,7 +76,7 @@ interface DepartmentListResponse {
 const FacultyList: React.FC = () => {
   const navigate = useNavigate();
   const [faculty, setFaculty] = useState<Faculty[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to allow initial fetch
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -84,10 +85,18 @@ const FacultyList: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<number | ''>('');
 
-  const fetchDepartments = async () => {
+  const fetchDepartments = useCallback(async () => {
     try {
       console.log('Fetching departments for faculty page...');
-      const response = await api.getCached<DepartmentListResponse>('/departments');
+      
+      // Use axios directly with full URL to avoid API utility issues
+      const token = localStorage.getItem('token');
+      const response = await axios.get<DepartmentListResponse>('http://localhost:3000/api/departments', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       
       if (response?.data?.success && Array.isArray(response.data.data.departments)) {
         console.log(`Successfully loaded ${response.data.data.departments.length} departments`);
@@ -100,17 +109,24 @@ const FacultyList: React.FC = () => {
       console.error('Error fetching departments:', err);
       setDepartments([]);
     }
-  };
+  }, []);
 
-  const fetchFaculty = async () => {
+  const fetchFaculty = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get<FacultyListResponse>('/faculty', {
+      
+      // Use axios directly with full URL to avoid API utility issues
+      const token = localStorage.getItem('token');
+      const response = await axios.get<FacultyListResponse>('http://localhost:3000/api/faculty', {
         params: {
           page: page + 1,
           limit: rowsPerPage,
           search: searchQuery,
           departmentId: selectedDepartment || undefined
+        },
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
         }
       });
 
@@ -126,15 +142,15 @@ const FacultyList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, searchQuery, selectedDepartment]);
 
   useEffect(() => {
     fetchDepartments();
-  }, []);
+  }, [fetchDepartments]);
 
   useEffect(() => {
     fetchFaculty();
-  }, [page, rowsPerPage, searchQuery, selectedDepartment, fetchFaculty]);
+  }, [fetchFaculty]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);

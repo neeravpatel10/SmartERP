@@ -1248,6 +1248,459 @@ export const exportStudentsToExcel = async (req: Request, res: Response) => {
   }
 };
 
+// Assign sections to students based on USN range
+export const assignSectionByUsn = async (req: Request, res: Response) => {
+  try {
+    const { departmentId, batchId, rules } = req.body;
+
+    // Validate required fields
+    if (!departmentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department ID is required'
+      });
+    }
+
+    if (!batchId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Batch ID is required'
+      });
+    }
+
+    if (!rules || !Array.isArray(rules) || rules.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one assignment rule is required'
+      });
+    }
+
+    // Validate each rule has required fields
+    for (const rule of rules) {
+      if (!rule.startUsn || !rule.endUsn || !rule.section) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each rule must have startUsn, endUsn, and section'
+        });
+      }
+    }
+
+    // Check if department exists
+    const department = await prisma.department.findUnique({
+      where: { id: departmentId }
+    });
+
+    if (!department) {
+      return res.status(404).json({
+        success: false,
+        message: 'Department not found'
+      });
+    }
+
+    // Check if batch exists
+    const batch = await prisma.batch.findUnique({
+      where: { id: batchId }
+    });
+
+    if (!batch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Batch not found'
+      });
+    }
+
+    // Check if user has permission for this department
+    if (req.user.loginType === 2 && req.user.departmentId !== departmentId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to modify students in this department'
+      });
+    }
+
+    // Process each rule and update students
+    let totalUpdated = 0;
+
+    for (const rule of rules) {
+      // Find students in the given USN range
+      const studentsToUpdate = await prisma.student.findMany({
+        where: {
+          departmentId,
+          batchId,
+          usn: {
+            gte: rule.startUsn,
+            lte: rule.endUsn
+          }
+        }
+      });
+
+      if (studentsToUpdate.length > 0) {
+        // Update students with the new section
+        await prisma.student.updateMany({
+          where: {
+            departmentId,
+            batchId,
+            usn: {
+              gte: rule.startUsn,
+              lte: rule.endUsn
+            }
+          },
+          data: {
+            section: rule.section,
+            updatedAt: new Date()
+          }
+        });
+
+        totalUpdated += studentsToUpdate.length;
+      }
+    }
+
+    // Create audit log entry
+    await prisma.auditlog.create({
+      data: {
+        userId: req.user.id,
+        action: 'UPDATE',
+        entityType: 'STUDENT_SECTION',
+        entityId: `BATCH_${batchId}_DEPT_${departmentId}`,
+        oldValue: null,
+        newValue: JSON.stringify(rules),
+        ipAddress: req.ip || null,
+        timestamp: new Date()
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully updated sections for ${totalUpdated} students`,
+      count: totalUpdated
+    });
+  } catch (error) {
+    console.error('Error assigning sections by USN:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Get students by various attributes
+ * This endpoint allows finding students through any combination of attributes
+ */
+export const getStudentsByAttributes = async (req: Request, res: Response) => {
+  try {
+    const {
+      email,
+      phone,
+      name,
+      batchId,
+      departmentId,
+      semester,
+      section,
+      admissionYear,
+      limit = 10,
+      page = 1
+    } = req.query;
+
+    // Convert parameters
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build where clause based on provided parameters
+    const whereClause: any = {};
+
+    // Add conditions if parameters are provided
+    if (email) whereClause.email = { contains: email as string };
+    if (phone) whereClause.phone = { contains: phone as string };
+    
+    // Handle name search (first, middle, or last name)
+    if (name) {
+      const nameStr = name as string;
+      whereClause.OR = [
+        { firstName: { contains: nameStr } },
+        { middleName: { contains: nameStr } },
+        { lastName: { contains: nameStr } }
+      ];
+    }
+    
+    // Add other filters
+    if (batchId) whereClause.batchId = parseInt(batchId as string);
+    if (departmentId) whereClause.departmentId = parseInt(departmentId as string);
+    if (semester) whereClause.semester = parseInt(semester as string);
+    if (section) whereClause.section = section as string;
+    if (admissionYear) whereClause.admissionYear = parseInt(admissionYear as string);
+
+    // Count total matching records for pagination
+    const totalCount = await prisma.student.count({
+      where: whereClause
+    });
+
+    // Get students matching the criteria
+    const students = await prisma.student.findMany({
+      where: whereClause,
+      select: {
+        usn: true,
+        firstName: true,
+        middleName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        dob: true,
+        gender: true,
+        semester: true,
+        section: true,
+        admissionYear: true,
+        userId: true,
+        departmentId: true,
+        batchId: true,
+        batch: {
+          select: {
+            id: true,
+            name: true,
+            academicYear: true
+          }
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            active: true,
+            lastLogin: true
+          }
+        }
+      },
+      skip,
+      take: limitNum,
+      orderBy: {
+        firstName: 'asc'
+      }
+    });
+
+    // Format students data
+    const formattedStudents = students.map(student => ({
+      ...student,
+      fullName: `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`.trim(),
+      hasLogin: !!student.userId,
+      department: student.department ? {
+        id: student.department.id,
+        code: student.department.code,
+        name: student.department.name
+      } : null,
+      batch: student.batch ? {
+        id: student.batch.id,
+        name: student.batch.name,
+        academicYear: student.batch.academicYear
+      } : null
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        students: formattedStudents,
+        pagination: {
+          total: totalCount,
+          page: pageNum,
+          limit: limitNum,
+          pages: Math.ceil(totalCount / limitNum)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get students by attributes error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Get comprehensive student data by USN
+ * This function retrieves complete student information including related data from all tables
+ */
+export const getCompleteStudentByUSN = async (req: Request, res: Response) => {
+  try {
+    const { usn } = req.params;
+
+    // Find the student with all related information
+    const student = await prisma.student.findUnique({
+      where: { usn },
+      include: {
+        // Include user information connected by userId
+        user: {
+          include: {
+            displaypic: true,
+            // Include student's attendance data
+            auditlog: {
+              orderBy: { timestamp: 'desc' },
+              take: 10 // Get recent 10 audit logs
+            }
+          }
+        },
+        // Include all related student data
+        batch: true,
+        department: true,
+        addresses: true,
+        guardians: true,
+        entranceExams: true,
+        pucRecord: true,
+        sslcRecord: true,
+        // Include marks and attendance data
+        studentcomponentmark: {
+          include: {
+            examcomponent: {
+              include: {
+                subject: true
+              }
+            }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 50 // Get recent 50 marks entries
+        },
+        attendanceentry: {
+          include: {
+            session: {
+              include: {
+                subject: true,
+                faculty: true
+              }
+            }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 50 // Get recent 50 attendance entries
+        }
+      }
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+
+    // Format guardian information
+    const guardians = {
+      father: student.guardians.find(g => g.type === 'father') || null,
+      mother: student.guardians.find(g => g.type === 'mother') || null,
+      guardian: student.guardians.find(g => g.type === 'guardian') || null
+    };
+
+    // Format address information
+    const addresses = {
+      present: student.addresses.find(a => a.type === 'present') || null,
+      permanent: student.addresses.find(a => a.type === 'permanent') || null
+    };
+
+    // Calculate attendance percentages by subject
+    const attendanceBySubject: Record<string, { present: number, total: number, percentage: number }> = {};
+    
+    student.attendanceentry.forEach(entry => {
+      const subjectId = entry.session?.subjectId?.toString() || 'unknown';
+      if (!attendanceBySubject[subjectId]) {
+        attendanceBySubject[subjectId] = { present: 0, total: 0, percentage: 0 };
+      }
+      
+      attendanceBySubject[subjectId].total++;
+      if (entry.status === 'Present') {
+        attendanceBySubject[subjectId].present++;
+      }
+    });
+    
+    // Calculate percentages
+    Object.keys(attendanceBySubject).forEach(subjectId => {
+      const subject = attendanceBySubject[subjectId];
+      subject.percentage = subject.total > 0 
+        ? Math.round((subject.present / subject.total) * 100) 
+        : 0;
+    });
+
+    // Format marks by subject
+    const marksBySubject: Record<string, any[]> = {};
+    
+    student.studentcomponentmark.forEach(mark => {
+      const subjectId = mark.examcomponent?.subject?.id?.toString() || 'unknown';
+      if (!marksBySubject[subjectId]) {
+        marksBySubject[subjectId] = [];
+      }
+      
+      marksBySubject[subjectId].push({
+        componentId: mark.componentId,
+        componentName: mark.examcomponent?.name || 'Unknown',
+        maxMarks: mark.examcomponent?.maxMarks || 0,
+        obtainedMarks: mark.marksObtained,
+        percentage: mark.examcomponent?.maxMarks 
+          ? Math.round((mark.marksObtained / mark.examcomponent.maxMarks) * 100) 
+          : 0,
+        date: mark.updatedAt
+      });
+    });
+
+    // Format the comprehensive student data
+    const formattedStudent = {
+      usn: student.usn,
+      name: {
+        first: student.firstName,
+        middle: student.middleName,
+        last: student.lastName,
+        full: `${student.firstName} ${student.middleName ? student.middleName + ' ' : ''}${student.lastName}`.trim()
+      },
+      email: student.email,
+      phone: student.phone,
+      dob: student.dob,
+      gender: student.gender,
+      academicInfo: {
+        batch: student.batch ? student.batch : { id: student.batchId, name: 'Unknown Batch' },
+        department: student.department ? student.department : { id: student.departmentId, name: 'Unknown Department' },
+        semester: student.semester,
+        section: student.section,
+        admissionYear: student.admissionYear
+      },
+      userAccount: student.user ? {
+        id: student.user.id,
+        username: student.user.username,
+        active: student.user.active,
+        lastLogin: student.user.lastLogin,
+        displayPicture: student.user.displaypic,
+        recentActivity: student.user.auditlog
+      } : null,
+      personalInfo: {
+        addresses,
+        guardians,
+        entranceExams: student.entranceExams[0] || null,
+        pucRecord: student.pucRecord[0] || null,
+        sslcRecord: student.sslcRecord[0] || null
+      },
+      performance: {
+        attendance: attendanceBySubject,
+        marks: marksBySubject
+      }
+    };
+
+    res.json({
+      success: true,
+      data: formattedStudent
+    });
+  } catch (error: unknown) {
+    console.error('Get complete student data error:', error);
+    let errorMessage = 'Internal server error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({
+      success: false,
+      message: errorMessage
+    });
+  }
+};
+
 // Delete student
 export const deleteStudent = async (req: Request, res: Response) => {
   try {

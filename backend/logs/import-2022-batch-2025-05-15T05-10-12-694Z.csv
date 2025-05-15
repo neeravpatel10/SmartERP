@@ -1,0 +1,1674 @@
+USN,Status,Details,SupplementaryDataStatus
+4AL22CS001,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL22CS002,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS003,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL22CS004,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS005,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL22CS006,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL22CS007,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS008,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS009,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS010,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS011,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS012,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS013,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS014,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS015,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS016,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS017,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS018,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS019,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS020,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS021,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS022,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS023,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS024,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS025,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS026,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS027,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS028,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS029,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS030,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS031,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS032,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS033,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS034,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS035,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS036,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS037,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS038,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS039,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS040,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS041,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS042,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS043,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS044,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS045,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS046,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS047,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS048,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS049,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS050,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS051,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS052,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS053,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS055,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS056,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS057,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS058,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS059,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS060,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS061,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS063,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS064,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS065,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS066,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS067,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS068,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS069,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS070,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS071,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS072,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS073,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS074,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS075,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS076,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS077,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS078,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS079,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS080,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS081,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS082,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS083,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS084,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS085,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS086,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS087,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS088,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS089,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS090,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS091,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS092,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS093,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS094,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS095,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS096,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS097,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS098,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS099,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS100,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS101,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS102,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS103,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS104,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS105,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS106,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS107,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS108,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS109,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS110,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS111,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS112,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS113,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS114,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS115,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS116,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS117,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS118,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS119,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS120,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS121,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS122,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS123,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS124,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS125,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS126,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS127,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS128,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS129,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS130,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS131,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS132,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS133,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS134,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS135,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS136,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS137,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS138,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS139,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS140,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS141,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS142,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS143,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS144,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS145,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS146,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS147,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS148,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS149,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS150,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS151,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS152,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS153,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS154,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS155,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS156,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS157,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS158,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS159,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS160,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS161,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS162,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS163,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS164,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS165,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS166,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS167,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS168,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS169,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS170,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS171,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS172,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS173,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS174,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS175,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS176,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS177,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS178,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS179,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS180,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS181,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS182,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS183,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS184,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS185,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS186,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS187,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS188,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS189,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL22CS190,FAILED,"Error: 
+Invalid `prisma.user.create()` invocation in
+C:\Users\dell5\Desktop\ERP\ERP\backend\scripts\import2022BatchStudents.ts:176:45
+
+  173 // Create new user
+  174 const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  175 
+→ 176 const newUser = await prisma.user.create(
+Unique constraint failed on the constraint: `User_username_key`","Not attempted"
+4AL23CS400,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS401,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS402,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS403,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS404,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS405,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS406,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS407,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS408,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS409,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS410,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS411,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"
+4AL23CS412,SUCCESS,"Student imported successfully","Present Address: Success, Permanent Address: Success, Entrance Exam: Success, SSLC: Success, PUC: Success"

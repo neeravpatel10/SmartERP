@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Container,
   Typography,
@@ -80,7 +81,7 @@ const AllBatches: React.FC = () => {
   
   const [batches, setBatches] = useState<Batch[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false); // Start with false to allow initial fetch
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -99,12 +100,25 @@ const AllBatches: React.FC = () => {
 
   const fetchDepartments = useCallback(async () => {
     try {
-      const response = await api.get('/departments');
-      if (response.data.success) {
+      // Use axios directly with full URL to avoid API utility issues
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3000/api/departments', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response?.data?.success && Array.isArray(response.data.data.departments)) {
         setDepartments(response.data.data.departments);
+      } else {
+        // Handle unexpected response format
+        console.error('Unexpected departments response format:', response?.data);
+        setDepartments([]);
       }
     } catch (err) {
       console.error('Error fetching departments:', err);
+      setDepartments([]);
     }
   }, []);
 
@@ -113,29 +127,46 @@ const AllBatches: React.FC = () => {
     setError(null);
     
     try {
-      const response = await api.get('/batches', {
+      // Use axios directly with full URL to avoid API utility issues
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3000/api/batches', {
         params: { 
           departmentId: selectedDepartment || undefined,
           search: searchTerm,
           showArchived: showArchived ? 'true' : 'false'
+        },
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
         }
       });
       
-      if (response.data.success) {
+      if (response?.data?.success && Array.isArray(response.data.data.batches)) {
         setBatches(response.data.data.batches);
+      } else {
+        // Handle unexpected response format
+        console.error('Unexpected batches response format:', response?.data);
+        setBatches([]);
+        setError('Received invalid data format from server');
       }
     } catch (err: any) {
       console.error('Error fetching batches:', err);
       setError(err.response?.data?.message || 'Failed to load batches');
+      setBatches([]);
     } finally {
       setLoading(false);
     }
   }, [selectedDepartment, searchTerm, showArchived]);
 
   useEffect(() => {
+    // Fetch departments first
     fetchDepartments();
+  }, [fetchDepartments]);
+  
+  // Separate effect for batches to prevent unnecessary fetches
+  useEffect(() => {
     fetchBatches();
-  }, [fetchDepartments, fetchBatches]);
+  }, [fetchBatches]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

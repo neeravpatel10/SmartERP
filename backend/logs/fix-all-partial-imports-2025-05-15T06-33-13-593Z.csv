@@ -1,0 +1,8 @@
+USN,Issue,Status,Details
+4AL22CS049,FATHER,SKIPPED,"Father guardian already exists"
+4AL22CS098,FATHER,SUCCESS,"Created placeholder father guardian information"
+4AL22CS159,FATHER,SKIPPED,"Father guardian already exists"
+4AL22CS064,ADDRESS,SUCCESS,"Created permanent address from present address data"
+4AL22CS117,ADDRESS,SUCCESS,"Created permanent address from present address data"
+4AL22CS138,ADDRESS,SUCCESS,"Created permanent address from present address data"
+4AL22CS152,ADDRESS,SUCCESS,"Created permanent address from present address data"

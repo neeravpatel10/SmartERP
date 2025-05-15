@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig, AxiosHeaders } from 'axios';
 // import { AxiosRequestConfig } from 'axios'; // Unused
 // import { store } from '../store'; // Unused
 // import { logout } from '../store/slices/authSlice'; // Unused
@@ -44,37 +44,61 @@ const requestCache: Record<string, {
 const DEFAULT_CACHE_MAX_AGE = 2 * 60 * 1000;
 
 // Add a getCached method for GET requests with caching
-api.getCached = async function<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-  const cacheKey = `${url}|${JSON.stringify(config?.params || {})}`;
-  const now = Date.now();
-  
-  // Check if we have a valid cached response
-  if (requestCache[cacheKey] && (now - requestCache[cacheKey].timestamp < requestCache[cacheKey].maxAge)) {
-    if (DEBUG_API) console.log(`Using cached response for ${url}`);
-    return {
-      ...requestCache[cacheKey].data,
-      data: requestCache[cacheKey].data.data,
-      config: { ...config },
-      headers: requestCache[cacheKey].data.headers,
-      status: requestCache[cacheKey].data.status,
-      statusText: requestCache[cacheKey].data.statusText,
-    } as AxiosResponse<T>;
+api.getCached = async function<T = any>(
+  url: string,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<T>> {
+  if (!url) {
+    console.error('API Error: Missing URL in getCached call');
+    return Promise.reject(new Error('Invalid API request - missing URL'));
   }
-  
-  // Otherwise make actual request
-  const response = await api.get<T>(url, config);
-  
-  // Cache the response
+
+  let safeConfig: AxiosRequestConfig = {
+    headers: new AxiosHeaders()
+  };
+
+  if (config && typeof config === 'object') {
+    if (config.params) safeConfig.params = config.params;
+    if (config.headers) {
+      if (config.headers instanceof AxiosHeaders) {
+        safeConfig.headers = config.headers;
+      } else {
+        Object.entries(config.headers).forEach(([key, value]) => {
+          (safeConfig.headers as AxiosHeaders).set(key, value);
+        });
+      }
+    }
+    if (config.timeout) safeConfig.timeout = config.timeout;
+    if (config.withCredentials !== undefined) {
+      safeConfig.withCredentials = config.withCredentials;
+    }
+  }
+
+  const cacheKey = `${url}|${JSON.stringify(safeConfig?.params || {})}`;
+  const now = Date.now();
+
+  if (
+    requestCache[cacheKey] &&
+    now - requestCache[cacheKey].timestamp < requestCache[cacheKey].maxAge
+  ) {
+    if (DEBUG_API) console.log(`Using cached response for ${url}`);
+    return requestCache[cacheKey].data; // ✅ clean and safe
+  }
+
+  const response = await api.get<T>(url, safeConfig);
+
   requestCache[cacheKey] = {
     data: response,
     timestamp: now,
-    maxAge: config?.headers?.['cache-max-age'] ? 
-      parseInt(config.headers['cache-max-age'] as string, 10) : 
-      DEFAULT_CACHE_MAX_AGE
+    maxAge:
+      safeConfig?.headers?.['cache-max-age']
+        ? parseInt(safeConfig.headers['cache-max-age'] as string, 10)
+        : DEFAULT_CACHE_MAX_AGE
   };
-  
+
   return response;
 };
+
 
 // Add a diagnostic method to test API connectivity
 api.testConnection = async () => {
@@ -108,6 +132,23 @@ api.testConnection = async () => {
 // Request interceptor to add the auth token to all requests
 api.interceptors.request.use(
   (config) => {
+    // Validate config object - prevent null/undefined config
+    if (!config) {
+      console.error('API Error: Null or undefined config object');
+      return Promise.reject(new Error('Invalid API request configuration - null config'));
+    }
+
+    // Validate URL - prevent undefined URL
+    if (!config.url) {
+      console.error('API Error: Missing URL in config');
+      return Promise.reject(new Error('Invalid API request configuration - missing URL'));
+    }
+
+    // Ensure headers object exists
+    if (!config.headers) {
+      config.headers = new AxiosHeaders();
+    }
+
     const token = localStorage.getItem('token');
     
     if (token) {
@@ -132,10 +173,7 @@ api.interceptors.request.use(
     
     return config;
   },
-  (error) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Track requests per endpoint to limit parallel requests to the same endpoint
@@ -239,7 +277,7 @@ api.interceptors.response.use(
   (response) => {
     if (DEBUG_API) {
       console.log('API Response:', {
-        url: response.config.url,
+        url: response.config?.url || 'unknown',
         status: response.status,
         data: response.data ? JSON.stringify(response.data).substring(0, 100) + '...' : null
       });
@@ -260,7 +298,7 @@ api.interceptors.response.use(
     
     if (DEBUG_API) {
       console.error('API Error Response:', {
-        url: error.config.url,
+        url: error.config?.url || 'unknown',
         status: error.response?.status,
         data: error.response?.data 
           ? JSON.stringify(error.response.data).substring(0, 200) + '...' 
@@ -272,8 +310,8 @@ api.interceptors.response.use(
     // Create a more descriptive error message for common status codes
     if (error.response) {
       const status = error.response.status;
-      const url = error.config.url;
-      const method = error.config.method ? error.config.method.toUpperCase() : 'UNKNOWN';
+      const url = error.config?.url || 'unknown';
+      const method = error.config?.method ? error.config.method.toUpperCase() : 'UNKNOWN';
       const defaultMessage = error.response.data?.message || error.message || 'Unknown API error';
       
       // Add details to the error message based on status code

@@ -311,7 +311,7 @@ export const getBatchById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const batch = await prisma.batch.findUnique({
-      where: { id: parseInt(id) },
+      where: { id },  
       include: {
         department: {
           select: {
@@ -358,7 +358,7 @@ export const getBatchStudents = async (req: Request, res: Response) => {
 
     // Check if batch exists
     const batchExists = await prisma.batch.findUnique({
-      where: { id: parseInt(id) }
+      where: { id }
     });
 
     if (!batchExists) {
@@ -380,7 +380,7 @@ export const getBatchStudents = async (req: Request, res: Response) => {
 
     // Combine batch ID and search conditions
     const whereCondition = {
-      batchId: parseInt(id),
+      batchId: id,
       ...searchCondition
     };
 
@@ -439,7 +439,8 @@ export const getBatchStudents = async (req: Request, res: Response) => {
 export const deleteBatch = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const batchId = parseInt(id);
+    // Use ID directly as string to match Prisma schema
+    const batchId = id;
 
     // Check if batch exists and if it has students
     const studentsCount = await prisma.student.count({
@@ -496,7 +497,7 @@ export const deleteBatch = async (req: Request, res: Response) => {
 export const rolloverBatch = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const batchId = parseInt(id);
+    const batchId = id; // Use ID as string
     const userId = (req as any).user?.id; // Get user ID from auth middleware
 
     // Check if batch exists

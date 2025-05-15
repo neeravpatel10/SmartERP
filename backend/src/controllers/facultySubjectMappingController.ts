@@ -85,9 +85,16 @@ export const getAllMappings = async (req: Request, res: Response) => {
             code: true,
             semester: true,
             departmentId: true,
-            category: true,
+            categoryId: true,
             status: true,
             department: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            },
+            subjectcategory: {
               select: {
                 id: true,
                 name: true,
@@ -149,7 +156,14 @@ export const getMappingById = async (req: Request, res: Response) => {
             code: true,
             semester: true,
             departmentId: true,
-            category: true
+            categoryId: true,
+            subjectcategory: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            }
           }
         },
         batch: {

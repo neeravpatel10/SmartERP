@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = `/api/faculty-subject-mapping`;
+// Fix API URL to avoid duplicate /api prefix issues
+const API_URL = `faculty-subject-mapping`;
 
 /**
  * Service for handling faculty-subject mapping API requests

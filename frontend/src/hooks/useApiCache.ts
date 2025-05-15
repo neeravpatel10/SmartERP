@@ -11,12 +11,23 @@ export function useApiCache() {
   const cacheRef = useRef(createResourceCache());
   
   const getCached = useCallback(async (url: string, params: any = {}, ttl: number = 120000) => {
+    if (!url) {
+      console.error('Invalid URL provided to useApiCache.getCached');
+      throw new Error('URL is required for API requests');
+    }
+    
     const key = `${url}|${JSON.stringify(params)}`;
-    return cacheRef.current.get(
-      key,
-      () => api.getCached(url, { params }),
-      ttl
-    );
+    try {
+      return cacheRef.current.get(
+        key,
+        // Use regular get instead of getCached to avoid potential issues
+        () => api.get(url, { params }),
+        ttl
+      );
+    } catch (error) {
+      console.error(`Error in useApiCache.getCached for ${url}:`, error);
+      throw error;
+    }
   }, []);
   
   return {

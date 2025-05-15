@@ -1,6 +1,6 @@
 import React, { useEffect, useState, ChangeEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../../utils/api';
+import axios from 'axios';
 import {
   Container,
   Typography,
@@ -157,9 +157,26 @@ const StudentForm: React.FC<StudentFormProps> = ({ mode }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+        const token = localStorage.getItem('token');
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        };
+
         const [deptResponse, batchResponse] = await Promise.all([
-          api.get('/departments'),
-          api.get('/batches')
+          axios({
+            method: 'GET',
+            baseURL,
+            url: '/departments',
+            headers
+          }),
+          axios({
+            method: 'GET',
+            baseURL,
+            url: '/batches',
+            headers
+          })
         ]);
 
         if (deptResponse.data.success) {
@@ -182,7 +199,19 @@ const StudentForm: React.FC<StudentFormProps> = ({ mode }) => {
       if (mode === 'edit' && usn) {
         setLoading(true);
         try {
-          const response = await api.get(`/students/${usn}`);
+          const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+          const token = localStorage.getItem('token');
+          
+          const response = await axios({
+            method: 'GET',
+            baseURL,
+            url: `/students/${usn}`,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
           if (response.data.success) {
             const student = response.data.data;
             console.log('Fetched student data:', student);
@@ -271,11 +300,18 @@ const StudentForm: React.FC<StudentFormProps> = ({ mode }) => {
 
     try {
       const endpoint = mode === 'edit' ? `/students/${usn}` : '/students';
-      const method = mode === 'edit' ? 'put' : 'post';
+      const method = mode === 'edit' ? 'PUT' : 'POST';
+      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+      const token = localStorage.getItem('token');
       
-      const response = await api({
+      const response = await axios({
         method,
+        baseURL,
         url: endpoint,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         data: dataToSend
       });
 

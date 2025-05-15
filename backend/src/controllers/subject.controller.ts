@@ -592,6 +592,15 @@ export const getSubjects = async (req: Request, res: Response) => {
 export const getSubjectById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    
+    // Validate the ID parameter
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid subject ID format. Must be a valid number.'
+      });
+    }
+    
     const subjectId = parseInt(id);
     
     // Get the subject with all related data

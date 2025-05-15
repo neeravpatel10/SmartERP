@@ -57,6 +57,7 @@ import FacultySubjectStudents from './pages/faculty/FacultySubjectStudents';
 import StudentsList from './pages/students/StudentsList';
 import StudentForm from './pages/students/StudentForm';
 import StudentLoginManagement from './pages/students/StudentLoginManagement';
+import StudentSectionAssignment from './pages/students/StudentSectionAssignment';
 
 // Faculty pages (Add import for FacultyForm)
 import FacultyForm from './pages/faculty/FacultyForm';
@@ -284,6 +285,11 @@ const App: React.FC = () => {
                 <Route path="login-management" element={
                   <ProtectedRoute requiredRoles={[1, 3]}>
                     <StudentLoginManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="section-assignment" element={
+                  <ProtectedRoute requiredRoles={[1, 3]}>
+                    <StudentSectionAssignment />
                   </ProtectedRoute>
                 } />
               </Route>

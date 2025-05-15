@@ -99,12 +99,18 @@ const Batches: React.FC = () => {
     try {
       const response = await api.get(`/departments/${departmentId}`);
       
-      if (response.data.success) {
+      if (response?.data?.success && response.data.data) {
         setDepartment(response.data.data);
+      } else {
+        // Handle unexpected response format
+        console.error('Unexpected department response format:', response?.data);
+        setError('Failed to load department information - invalid data format');
+        setDepartment(null);
       }
     } catch (err) {
       console.error('Error fetching department:', err);
       setError('Failed to load department information');
+      setDepartment(null);
     }
   }, [departmentId]);
 
@@ -122,12 +128,18 @@ const Batches: React.FC = () => {
         }
       });
       
-      if (response.data.success) {
+      if (response?.data?.success && Array.isArray(response.data.data.batches)) {
         setBatches(response.data.data.batches);
+      } else {
+        // Handle unexpected response format
+        console.error('Unexpected batches response format:', response?.data);
+        setBatches([]);
+        setError('Received invalid data format from server');
       }
     } catch (err: any) {
       console.error('Error fetching batches:', err);
       setError(err.response?.data?.message || 'Failed to load batches');
+      setBatches([]);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -25,10 +25,11 @@ import {
   Grid,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
+// API interceptor handles authentication automatically
 import api from '../../utils/api';
+import axios from 'axios';
 import Autocomplete from '@mui/material/Autocomplete';
-import { debounce } from '../../utils/helpers';
+// No longer using the debounce helper - implementing inline with setTimeout
 
 interface Department {
   id: number;
@@ -67,10 +68,9 @@ const initialFormData: DepartmentFormData = {
 
 const Departments: React.FC = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
   
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false); // Start with false to allow initial fetch
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -87,61 +87,98 @@ const Departments: React.FC = () => {
 
   // Wrap fetchDepartments in useCallback
   const fetchDepartments = useCallback(async () => {
+    // No loading check needed here
     setLoading(true);
     setError(null);
-    
+  
     try {
-      const response = await api.getCached('/departments', {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { search: searchTerm }
+      // Use axios directly with the full URL to bypass any routing issues
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3000/api/departments', {
+        params: { search: searchTerm },
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
       });
       
-      if (response.data.success) {
+      if (response && response.data && response.data.success) {
         setDepartments(response.data.data.departments);
+      } else {
+        throw new Error('Failed to load departments: ' + 
+          (response?.data?.message || 'Unknown error'));
       }
     } catch (err: any) {
       console.error('Error fetching departments:', err);
-      setError(err.response?.data?.message || 'Failed to load departments');
+      setError(err.response?.data?.message || err.message || 'Failed to load departments');
+      // Clear cache in case there's a stale entry
+      api.clearCache('/departments');
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, token]);
+  }, [searchTerm]); // Remove loading from dependencies
 
-  // Create a debounced search function
-  const debouncedSearch = useCallback(() => {
-    const debouncedFn = debounce(() => {
+  // Create stable reference to the debounce function
+  const debouncedFetchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Single effect to handle all search functionality
+  useEffect(() => {
+    // Function to perform the search
+    const performSearch = () => {
+      // Don't check loading here, let fetchDepartments handle it
       fetchDepartments();
+    };
+    
+    // For initial load or when search term is empty, search immediately
+    if (searchTerm === '') {
+      performSearch();
+      return;
+    }
+    
+    // For search term changes, use debounce
+    // Clear any pending timeout
+    if (debouncedFetchRef.current) {
+      clearTimeout(debouncedFetchRef.current);
+    }
+    
+    // Set new timeout
+    debouncedFetchRef.current = setTimeout(() => {
+      performSearch();
     }, 500);
     
-    debouncedFn();
-  }, [fetchDepartments]);
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (debouncedFetchRef.current) {
+        clearTimeout(debouncedFetchRef.current);
+      }
+    };
+  }, [searchTerm, fetchDepartments, loading]);
 
   // Fetch faculty for a department
   const fetchDepartmentFaculty = useCallback(async (departmentId: number) => {
     setFacultyLoading(true);
     try {
-      const response = await api.get('/faculty', {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { departmentId }
+      // Use direct axios call with full URL like we did for departments
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3000/api/faculty', {
+        params: { departmentId },
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
       });
       if (response.data.success) {
         setDepartmentFaculty(response.data.data.faculty);
+      } else {
+        throw new Error('Failed to load faculty');
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Error fetching faculty:', err);
       setDepartmentFaculty([]);
     } finally {
       setFacultyLoading(false);
     }
-  }, [token]);
-
-  useEffect(() => {
-    fetchDepartments();
-  }, [fetchDepartments]);
-
-  // When search term changes, use the debounced search
-  useEffect(() => {
-    debouncedSearch();
-  }, [searchTerm, debouncedSearch]);
+  }, []);
 
   // When editing or adding, fetch faculty for the department
   useEffect(() => {

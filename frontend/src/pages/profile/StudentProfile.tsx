@@ -91,13 +91,17 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// Data interface
+// For the student profile data structure
+
+// For backward compatibility with existing component structure
 interface StudentProfileData {
   student: {
     usn: string;
     name: string;
     email: string;
     phone: string;
+    dob?: string | null;
+    gender?: string | null;
     department: {
       id: number;
       name: string;
@@ -154,6 +158,30 @@ interface StudentProfileData {
       totalSubjectsAttempted: number;
     };
   };
+  personalInfo?: {
+    addresses: {
+      present: any | null;
+      permanent: any | null;
+    };
+    guardians: {
+      father: any | null;
+      mother: any | null;
+      guardian: any | null;
+    };
+    education: {
+      entranceExams: any | null;
+      pucRecord: any | null;
+      sslcRecord: any | null;
+    };
+  };
+  userAccount?: {
+    id: number;
+    username: string;
+    active: boolean;
+    lastLogin: string | null;
+    displayPicture: any;
+    recentActivity: any[];
+  } | null;
 }
 
 // Component to render the grade
@@ -182,6 +210,71 @@ const StudentProfile: React.FC = () => {
     const fetchStudentProfile = async () => {
       try {
         setLoading(true);
+        
+        // First try to fetch comprehensive data from the new endpoint
+        try {
+          const completeResponse = await axios.get(`/api/students/${usn}/complete`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (completeResponse.data.success) {
+            // Convert the comprehensive format to the format expected by the component
+            const comprehensiveData = completeResponse.data.data;
+            
+            // Create compatible data structure
+            const compatibleData: StudentProfileData = {
+              student: {
+                usn: comprehensiveData.usn,
+                name: comprehensiveData.name.full,
+                email: comprehensiveData.email || '',
+                phone: comprehensiveData.phone,
+                dob: comprehensiveData.dob,
+                gender: comprehensiveData.gender,
+                department: comprehensiveData.academicInfo.department,
+                batch: comprehensiveData.academicInfo.batch,
+                currentSemester: comprehensiveData.academicInfo.semester,
+                section: comprehensiveData.academicInfo.section
+              },
+              academicData: {
+                // We'll have placeholder semesters data until we have proper formatting
+                semesters: [{
+                  semester: comprehensiveData.academicInfo.semester,
+                  subjects: [],
+                  attendance: [],
+                  totalMarks: {
+                    obtained: 0,
+                    max: 0,
+                    percentage: 0
+                  }
+                }],
+                cumulativeSummary: {
+                  totalAttendanceAverage: 0,
+                  totalSubjectsAttempted: 0
+                }
+              },
+              // Add the comprehensive data's personal info and user account
+              personalInfo: {
+                addresses: comprehensiveData.personalInfo.addresses,
+                guardians: comprehensiveData.personalInfo.guardians,
+                education: {
+                  entranceExams: comprehensiveData.personalInfo.entranceExams,
+                  pucRecord: comprehensiveData.personalInfo.pucRecord,
+                  sslcRecord: comprehensiveData.personalInfo.sslcRecord
+                }
+              },
+              userAccount: comprehensiveData.userAccount
+            };
+            
+            setData(compatibleData);
+            setSelectedTab(0); // First semester/tab
+            return; // Successfully fetched and converted, no need to try the old endpoint
+          }
+        } catch (comprehensiveErr) {
+          console.log('Comprehensive endpoint not available or error, falling back to old format', comprehensiveErr);
+          // If it fails, we'll fall back to the old endpoint
+        }
+        
+        // Fallback to original endpoint
         const response = await axios.get(`/profile/${usn}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -366,33 +459,28 @@ const StudentProfile: React.FC = () => {
                 <ListItem>
                   <ListItemText 
                     primary="Email" 
-                    secondary={data.student.email} 
+                    secondary={data.student.email || 'Not specified'} 
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText 
                     primary="Phone" 
-                    secondary={data.student.phone} 
+                    secondary={data.student.phone || 'Not specified'} 
                   />
                 </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Department" 
-                    secondary={data.student.department.name} 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Batch" 
-                    secondary={data.student.batch.name} 
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText 
-                    primary="Current Semester" 
-                    secondary={data.student.currentSemester} 
-                  />
-                </ListItem>
+                {data.student.dob && (
+                  <ListItem>
+                    <ListItemText 
+                      primary="Date of Birth" 
+                      secondary={new Date(data.student.dob).toLocaleDateString()} 
+                    />
+                  </ListItem>
+                )}
+                {data.student.gender && (
+                  <ListItem>
+                    <ListItemText primary="Gender" secondary={data.student.gender} />
+                  </ListItem>
+                )}
               </List>
               
               {canDownloadProfile() && (
@@ -449,6 +537,411 @@ const StudentProfile: React.FC = () => {
           
           {/* Main content */}
           <Grid item xs={12} md={9}>
+            {/* Personal Information and Guardian Details */}
+            {data.personalInfo && (
+              <Paper sx={{ p: 3, mb: 3 }} elevation={2}>
+                <Typography variant="h6" gutterBottom>
+                  Personal Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                
+                {/* Addresses */}
+                <Accordion defaultExpanded>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle1">Address Information</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {/* Present Address */}
+                      <Grid item xs={12} md={6}>
+                        <Card variant="outlined">
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Present Address
+                            </Typography>
+                            {data.personalInfo.addresses.present ? (
+                              <>
+                                <Typography variant="body2">
+                                  {data.personalInfo.addresses.present.line1}
+                                </Typography>
+                                {data.personalInfo.addresses.present.line2 && (
+                                  <Typography variant="body2">
+                                    {data.personalInfo.addresses.present.line2}
+                                  </Typography>
+                                )}
+                                <Typography variant="body2">
+                                  {data.personalInfo.addresses.present.city}, {data.personalInfo.addresses.present.state} {data.personalInfo.addresses.present.postalCode}
+                                </Typography>
+                                <Typography variant="body2">
+                                  {data.personalInfo.addresses.present.country}
+                                </Typography>
+                              </>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                No present address information available
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      
+                      {/* Permanent Address */}
+                      <Grid item xs={12} md={6}>
+                        <Card variant="outlined">
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Permanent Address
+                            </Typography>
+                            {data.personalInfo.addresses.permanent ? (
+                              <>
+                                <Typography variant="body2">
+                                  {data.personalInfo.addresses.permanent.line1}
+                                </Typography>
+                                {data.personalInfo.addresses.permanent.line2 && (
+                                  <Typography variant="body2">
+                                    {data.personalInfo.addresses.permanent.line2}
+                                  </Typography>
+                                )}
+                                <Typography variant="body2">
+                                  {data.personalInfo.addresses.permanent.city}, {data.personalInfo.addresses.permanent.state} {data.personalInfo.addresses.permanent.postalCode}
+                                </Typography>
+                                <Typography variant="body2">
+                                  {data.personalInfo.addresses.permanent.country}
+                                </Typography>
+                              </>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                No permanent address information available
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+                
+                {/* Guardians */}
+                <Accordion defaultExpanded>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle1">Guardian Information</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {/* Father */}
+                      <Grid item xs={12} md={4}>
+                        <Card variant="outlined">
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Father
+                            </Typography>
+                            {data.personalInfo.guardians.father ? (
+                              <List dense>
+                                <ListItem>
+                                  <ListItemText primary="Name" secondary={data.personalInfo.guardians.father.name} />
+                                </ListItem>
+                                {data.personalInfo.guardians.father.occupation && (
+                                  <ListItem>
+                                    <ListItemText primary="Occupation" secondary={data.personalInfo.guardians.father.occupation} />
+                                  </ListItem>
+                                )}
+                                <ListItem>
+                                  <ListItemText primary="Phone" secondary={data.personalInfo.guardians.father.phone} />
+                                </ListItem>
+                                {data.personalInfo.guardians.father.email && (
+                                  <ListItem>
+                                    <ListItemText primary="Email" secondary={data.personalInfo.guardians.father.email} />
+                                  </ListItem>
+                                )}
+                                {data.personalInfo.guardians.father.income && (
+                                  <ListItem>
+                                    <ListItemText primary="Annual Income" secondary={data.personalInfo.guardians.father.income} />
+                                  </ListItem>
+                                )}
+                              </List>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                No father's information available
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      
+                      {/* Mother */}
+                      <Grid item xs={12} md={4}>
+                        <Card variant="outlined">
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Mother
+                            </Typography>
+                            {data.personalInfo.guardians.mother ? (
+                              <List dense>
+                                <ListItem>
+                                  <ListItemText primary="Name" secondary={data.personalInfo.guardians.mother.name} />
+                                </ListItem>
+                                {data.personalInfo.guardians.mother.occupation && (
+                                  <ListItem>
+                                    <ListItemText primary="Occupation" secondary={data.personalInfo.guardians.mother.occupation} />
+                                  </ListItem>
+                                )}
+                                <ListItem>
+                                  <ListItemText primary="Phone" secondary={data.personalInfo.guardians.mother.phone} />
+                                </ListItem>
+                                {data.personalInfo.guardians.mother.email && (
+                                  <ListItem>
+                                    <ListItemText primary="Email" secondary={data.personalInfo.guardians.mother.email} />
+                                  </ListItem>
+                                )}
+                                {data.personalInfo.guardians.mother.income && (
+                                  <ListItem>
+                                    <ListItemText primary="Annual Income" secondary={data.personalInfo.guardians.mother.income} />
+                                  </ListItem>
+                                )}
+                              </List>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                No mother's information available
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      
+                      {/* Guardian */}
+                      <Grid item xs={12} md={4}>
+                        <Card variant="outlined">
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              Guardian
+                            </Typography>
+                            {data.personalInfo.guardians.guardian ? (
+                              <List dense>
+                                <ListItem>
+                                  <ListItemText primary="Name" secondary={data.personalInfo.guardians.guardian.name} />
+                                </ListItem>
+                                {data.personalInfo.guardians.guardian.relation && (
+                                  <ListItem>
+                                    <ListItemText primary="Relation" secondary={data.personalInfo.guardians.guardian.relation} />
+                                  </ListItem>
+                                )}
+                                {data.personalInfo.guardians.guardian.occupation && (
+                                  <ListItem>
+                                    <ListItemText primary="Occupation" secondary={data.personalInfo.guardians.guardian.occupation} />
+                                  </ListItem>
+                                )}
+                                <ListItem>
+                                  <ListItemText primary="Phone" secondary={data.personalInfo.guardians.guardian.phone} />
+                                </ListItem>
+                                {data.personalInfo.guardians.guardian.email && (
+                                  <ListItem>
+                                    <ListItemText primary="Email" secondary={data.personalInfo.guardians.guardian.email} />
+                                  </ListItem>
+                                )}
+                              </List>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                No guardian's information available
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+                
+                {/* Education History */}
+                <Accordion defaultExpanded>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle1">Education History</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {/* Education records */}
+                      {data.personalInfo.education?.sslcRecord && (
+                        <Grid item xs={12} md={4}>
+                          <Card variant="outlined">
+                            <CardContent>
+                              <Typography variant="h6" gutterBottom>
+                                SSLC / 10th Standard
+                              </Typography>
+                              <List dense>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="School" 
+                                    secondary={data.personalInfo.education.sslcRecord.schoolName || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Board" 
+                                    secondary={data.personalInfo.education.sslcRecord.board || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Year of Passing" 
+                                    secondary={data.personalInfo.education.sslcRecord.yearOfPassing || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Percentage/CGPA" 
+                                    secondary={data.personalInfo.education.sslcRecord.percentage || 'Not specified'} 
+                                  />
+                                </ListItem>
+                              </List>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      )}
+                      
+                      {data.personalInfo.education?.pucRecord && (
+                        <Grid item xs={12} md={4}>
+                          <Card variant="outlined">
+                            <CardContent>
+                              <Typography variant="h6" gutterBottom>
+                                PUC / 12th Standard
+                              </Typography>
+                              <List dense>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="College" 
+                                    secondary={data.personalInfo.education.pucRecord.collegeName || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Board" 
+                                    secondary={data.personalInfo.education.pucRecord.board || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Year of Passing" 
+                                    secondary={data.personalInfo.education.pucRecord.yearOfPassing || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Percentage/CGPA" 
+                                    secondary={data.personalInfo.education.pucRecord.percentage || 'Not specified'} 
+                                  />
+                                </ListItem>
+                              </List>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      )}
+                      
+                      {data.personalInfo.education?.entranceExams && (
+                        <Grid item xs={12} md={4}>
+                          <Card variant="outlined">
+                            <CardContent>
+                              <Typography variant="h6" gutterBottom>
+                                Entrance Exam
+                              </Typography>
+                              <List dense>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Exam Name" 
+                                    secondary={data.personalInfo.education.entranceExams.examName || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Exam ID" 
+                                    secondary={data.personalInfo.education.entranceExams.examId || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Year" 
+                                    secondary={data.personalInfo.education.entranceExams.year || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Rank" 
+                                    secondary={data.personalInfo.education.entranceExams.rank || 'Not specified'} 
+                                  />
+                                </ListItem>
+                                <ListItem>
+                                  <ListItemText 
+                                    primary="Score" 
+                                    secondary={data.personalInfo.education.entranceExams.score || 'Not specified'} 
+                                  />
+                                </ListItem>
+                              </List>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      )}
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              </Paper>
+            )}
+            
+            {/* User Account Information */}
+            {data.userAccount && (
+              <Paper sx={{ p: 3, mb: 3 }} elevation={2}>
+                <Typography variant="h6" gutterBottom>
+                  Account Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <List dense>
+                  <ListItem>
+                    <ListItemText 
+                      primary="Username" 
+                      secondary={data.userAccount.username} 
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemText 
+                      primary="Account Status" 
+                      secondary={data.userAccount.active ? 'Active' : 'Inactive'} 
+                    />
+                  </ListItem>
+                  {data.userAccount.lastLogin && (
+                    <ListItem>
+                      <ListItemText 
+                        primary="Last Login" 
+                        secondary={new Date(data.userAccount.lastLogin).toLocaleString()} 
+                      />
+                    </ListItem>
+                  )}
+                </List>
+                
+                {data.userAccount.recentActivity && data.userAccount.recentActivity.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+                      Recent Activity
+                    </Typography>
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Action</TableCell>
+                            <TableCell>Date</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {data.userAccount.recentActivity.map((activity: any, index: number) => (
+                            <TableRow key={index}>
+                              <TableCell>{activity.action}</TableCell>
+                              <TableCell>{new Date(activity.timestamp).toLocaleString()}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+              </Paper>
+            )}
+            
             {/* Performance Charts */}
             <Paper sx={{ p: 3, mb: 4 }} elevation={2}>
               <Typography variant="h6" gutterBottom>

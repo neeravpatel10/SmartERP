@@ -34,8 +34,7 @@ import {
   TextField, 
   Typography,
   Alert,
-  Snackbar,
-  CircularProgress
+  Snackbar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -43,7 +42,8 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Upload as UploadIcon,
-  CloudDownload as DownloadIcon
+  CloudDownload as DownloadIcon,
+  ViewList as ViewListIcon
 } from '@mui/icons-material';
 import BreadcrumbsComponent from '../../components/BreadcrumbsComponent';
 
@@ -88,7 +88,9 @@ const StudentsList: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
   const [uploadCount, setUploadCount] = useState<number>(0);
-  const [isUploading, setIsUploading] = useState(false);
+  // We track upload status but don't currently display it in the UI
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     dispatch(fetchStudents({ page, limit: rowsPerPage, search: searchQuery }));
@@ -218,25 +220,36 @@ const StudentsList: React.FC = () => {
               <Stack direction="row" spacing={2}>
                 <Button
                   variant="contained"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddStudent}
+                  sx={{ mr: 1 }}
+                >
+                  Add Student
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<UploadIcon />}
+                  onClick={handleBulkUpload}
+                  sx={{ mr: 1 }}
+                >
+                  Bulk Upload
+                </Button>
+                <Button
+                  variant="outlined"
                   startIcon={<DownloadIcon />}
                   onClick={handleDownloadTemplate}
+                  sx={{ mr: 1 }}
                 >
                   Template
                 </Button>
                 <Button
-                  variant="contained"
-                  startIcon={<UploadIcon />}
-                  onClick={handleBulkUpload}
-                  disabled={isUploading}
+                  variant="outlined"
+                  color="secondary"
+                  startIcon={<ViewListIcon />}
+                  onClick={() => navigate('/students/section-assignment')}
                 >
-                  {isUploading ? <CircularProgress size={24} color="inherit" /> : 'Bulk Upload'}
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddStudent}
-                >
-                  Add Student
+                  Section Assignment
                 </Button>
               </Stack>
             </Box>

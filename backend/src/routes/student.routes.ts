@@ -11,7 +11,10 @@ import {
   exportStudentsToExcel,
   createStudentLogin,
   createMultipleStudentLogins,
-  getStudentsWithoutLogins
+  getStudentsWithoutLogins,
+  assignSectionByUsn,
+  getStudentsByAttributes,
+  getCompleteStudentByUSN
 } from '../controllers/student.controller';
 
 const router = express.Router();
@@ -30,6 +33,10 @@ router.use(authenticate);
 // CRUD routes
 router.post('/', createStudent);
 router.get('/', getStudents);
+// Advanced search endpoint - allows finding students by multiple attributes
+router.get('/search', getStudentsByAttributes);
+// Comprehensive student data with all related information
+router.get('/:usn/complete', getCompleteStudentByUSN);
 router.get('/:usn', getStudentByUSN);
 router.put('/:usn', updateStudent);
 router.delete('/:usn', deleteStudent);
@@ -42,5 +49,8 @@ router.get('/export', exportStudentsToExcel);
 router.get('/management/without-logins', isDeptAdmin, getStudentsWithoutLogins);
 router.post('/:usn/create-login', isDeptAdmin, createStudentLogin);
 router.post('/create-multiple-logins', isDeptAdmin, createMultipleStudentLogins);
+
+// Section assignment route - require admin privileges
+router.patch('/assign-section-by-usn', isDeptAdmin, assignSectionByUsn);
 
 export default router; 

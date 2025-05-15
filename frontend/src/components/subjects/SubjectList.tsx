@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../../utils/api';
+import axios from 'axios';
 import AddEditSubjectModal from './AddEditSubjectModal';
 
 interface Subject {
@@ -49,17 +49,54 @@ const SubjectList: React.FC = () => {
   const fetchSubjects = async () => {
     try {
       setLoading(true);
-      // Try both endpoints to ensure compatibility
       let response;
+      // Move sectionsResponse to outer scope so it's available throughout the function
+      let sectionsResponse: any = null;
+      
       try {
-        // First try with the /subjects endpoint
-        response = await api.get('/subjects');
-        console.log('API Response from /subjects:', response.data);
+        // Use direct axios with full configuration to avoid issues with API utility
+        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+        const token = localStorage.getItem('token');
+        
+        // Request with include parameter for sections and expanded data
+        response = await axios({
+          method: 'GET',
+          baseURL,
+          url: '/subjects',
+          params: {
+            include: 'sections,faculty,categories',
+            expanded: true
+          },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        // If we need more section details, make a second request
+        try {
+          sectionsResponse = await axios({
+            method: 'GET',
+            baseURL,
+            url: '/sections',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (sectionsResponse.data?.success && sectionsResponse.data?.data) {
+            console.log('Sections data successfully fetched:', sectionsResponse.data);
+          }
+        } catch (sectionErr) {
+          console.error('Could not fetch section details:', sectionErr);
+          // Continue execution even if sections fetch fails
+        }
+        
+        console.log('API Response from subjects endpoint:', response.data);
       } catch (err) {
-        // If that fails, try with the /api/subjects endpoint
-        console.log('Trying fallback endpoint /api/subjects');
-        response = await api.get('/api/subjects');
-        console.log('API Response from /api/subjects:', response.data);
+        console.error('Error fetching subjects from primary endpoint:', err);
+        throw err; // Re-throw to be caught by the outer catch block
       }
       
       // Handle different response formats
@@ -86,18 +123,52 @@ const SubjectList: React.FC = () => {
         console.error('Unexpected API response format:', response.data);
       }
       
+      // Process section data from the sectionsResponse if available
+      const sectionsMap: {[key: number]: string} = {};
+      if (sectionsResponse?.data?.success && sectionsResponse?.data?.data) {
+        const sectionsData = Array.isArray(sectionsResponse.data.data) 
+          ? sectionsResponse.data.data 
+          : sectionsResponse.data.data.sections || [];
+        
+        // Create a map of section IDs to section names
+        sectionsData.forEach((section: any) => {
+          if (section.id) {
+            sectionsMap[section.id] = section.name || `Section ${section.id}`;
+          }
+        });
+        console.log('Sections map created:', sectionsMap);
+      }
+      
       // Ensure each subject has the required properties
-      const processedSubjects = subjectsData.map((subject: Partial<Subject>) => {
+      const processedSubjects = subjectsData.map((subject: any) => {
         // Log each subject to help debug
         console.log('Processing subject:', subject);
         
+        // Fix for category: map subjectcategory to category
+        const category = subject.subjectcategory || subject.category || null;
+        
+        // Fix for section: lookup section name by sectionId from the sections map
+        let section = subject.section;
+        if (!section && subject.sectionId && sectionsMap[subject.sectionId]) {
+          section = sectionsMap[subject.sectionId];
+        } else if (!section && subject.sectionId) {
+          section = `Section ${subject.sectionId}`;
+        }
+        
         return {
           ...subject,
+          // Map the fields properly
           facultyMappings: subject.facultyMappings || [],
           department: subject.department || { code: 'N/A', name: 'N/A' },
+          // Map the category properly
+          category: category ? {
+            id: category.id,
+            code: category.code || 'N/A',
+            name: category.name || 'N/A'
+          } : null,
           status: subject.status || 'active',
-          // Ensure section data is preserved
-          section: subject.section || null,
+          // Ensure section data is preserved and displayed with proper name
+          section: section,
           sectionId: subject.sectionId || null
         };
       }) as Subject[];
@@ -113,13 +184,22 @@ const SubjectList: React.FC = () => {
 
   const handleStatusChange = async (subjectId: number, newStatus: string) => {
     try {
-      await api.put(`/api/subjects/${subjectId}/status`, { 
-        status: newStatus 
+      // Use direct axios call to avoid issues with API utility
+      await axios({
+        method: 'PUT',
+        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3000/api',
+        url: `/subjects/${subjectId}/status`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: { status: newStatus }
       });
       
       alert(`Subject status changed to ${newStatus}`);
       fetchSubjects();
     } catch (error: any) {
+      console.error('Error updating subject status:', error);
       alert(error.response?.data?.message || 'Failed to update status');
     }
   };
@@ -128,10 +208,20 @@ const SubjectList: React.FC = () => {
   const handleDeleteSubject = async (subjectId: number) => {
     if (window.confirm('Are you sure you want to delete this subject?')) {
       try {
-        await api.delete(`/api/subjects/${subjectId}`);
+        // Use direct axios call to avoid issues with API utility
+        await axios({
+          method: 'DELETE',
+          baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3000/api',
+          url: `/subjects/${subjectId}`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         alert('Subject deleted successfully');
         fetchSubjects();
       } catch (error: any) {
+        console.error('Error deleting subject:', error);
         alert(error.response?.data?.message || 'Failed to delete subject');
       }
     }
