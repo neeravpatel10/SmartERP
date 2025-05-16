@@ -53,7 +53,7 @@ const UserList: React.FC = () => {
     return () => {
       if (searchTimeout) clearTimeout(searchTimeout);
     };
-  }, [dispatch, rowsPerPage]);
+  }, [dispatch, rowsPerPage, searchTimeout]);
   
   useEffect(() => {
     if (success) {

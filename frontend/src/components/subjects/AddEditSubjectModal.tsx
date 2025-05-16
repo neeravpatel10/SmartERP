@@ -399,7 +399,7 @@ const AddEditSubjectModal: React.FC<AddEditSubjectModalProps> = ({
         }
       }
     }
-  }, [subjectToEdit, categories, user]);
+  }, [subjectToEdit, categories, user, updatePreviewComponents]);
 
   // Use a separate effect to set the departmentId when user data is available
   useEffect(() => {
@@ -826,7 +826,7 @@ const AddEditSubjectModal: React.FC<AddEditSubjectModalProps> = ({
                     value={formData.sectionId}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    disabled={subjectToEdit && subjectToEdit.status !== 'draft' || isSectionsLoading}
+                    disabled={(subjectToEdit && subjectToEdit.status !== 'draft') || isSectionsLoading}
                   >
                     <option value={0}>Select Section</option>
                     {Array.isArray(sections) && sections.length > 0 ? (
@@ -924,7 +924,7 @@ const AddEditSubjectModal: React.FC<AddEditSubjectModalProps> = ({
                     onBlur={handleBlur}
                     required
                     isInvalid={!!getFieldError('categoryId')}
-                    disabled={subjectToEdit && subjectToEdit.status !== 'draft' || isCategoriesLoading}
+                    disabled={(subjectToEdit && subjectToEdit.status !== 'draft') || isCategoriesLoading}
                   >
                     <option value={0}>Select Category</option>
                     {Array.isArray(categories) && categories.length > 0 ? (

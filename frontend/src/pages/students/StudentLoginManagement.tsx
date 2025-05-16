@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -129,7 +129,7 @@ const StudentLoginManagement: React.FC = () => {
   }, []);
 
   // Fetch students without logins
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     setLoading(true);
     setErrorMessage(null);
     
@@ -162,7 +162,7 @@ const StudentLoginManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [departmentFilter, batchFilter, searchQuery]);
 
   // Initial load
   useEffect(() => {

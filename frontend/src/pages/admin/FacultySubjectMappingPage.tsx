@@ -4,9 +4,9 @@ import {
   Alert, Spinner, Modal, Tabs, Tab
 } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { facultySubjectMappingService } from '../../services/facultySubjectMappingService';
 import { RootState } from '../../store';
 import { ROLES } from '../../config/constants';
-import axios from 'axios';
 
 interface Faculty {
   id: string;
@@ -100,64 +100,30 @@ const FacultySubjectMappingPage: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        // Setup axios configuration to avoid API issues
-        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-        const token = localStorage.getItem('token');
-        const headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        };
+        // Fetch faculties
+        const facultiesRes = await fetch('/api/faculty?limit=1000');
+        const facultiesData = await facultiesRes.json();
         
-        // Fetch all data with proper axios configuration
-        const [facultiesRes, subjectsRes, batchesRes, sectionsRes, mappingsRes] = await Promise.all([
-          // Fetch faculties
-          axios({
-            method: 'GET',
-            baseURL,
-            url: '/faculty',
-            params: { limit: 1000 },
-            headers
-          }),
-          
-          // Fetch subjects
-          axios({
-            method: 'GET',
-            baseURL,
-            url: '/subjects',
-            headers
-          }),
-          
-          // Fetch batches
-          axios({
-            method: 'GET',
-            baseURL, 
-            url: '/batches',
-            headers
-          }),
-          
-          // Fetch sections
-          axios({
-            method: 'GET',
-            baseURL,
-            url: '/sections',
-            headers
-          }),
-          
-          // Use the updated facultySubjectMappingService
-          axios({
-            method: 'GET',
-            baseURL,
-            url: '/faculty-subject-mapping',
-            headers
-          })
-        ]);
+        // Fetch subjects
+        const subjectsRes = await fetch('/api/subjects');
+        const subjectsData = await subjectsRes.json();
         
-        // Process the responses
-        setFaculties(facultiesRes.data?.data?.faculty || []);
-        setSubjects(subjectsRes.data?.data || []);
-        setBatches(batchesRes.data?.data || []);
-        setSections(sectionsRes.data?.data || []);
-        setMappings(mappingsRes.data?.data || []);
+        // Fetch batches
+        const batchesRes = await fetch('/api/batches');
+        const batchesData = await batchesRes.json();
+        
+        // Fetch sections
+        const sectionsRes = await fetch('/api/sections');
+        const sectionsData = await sectionsRes.json();
+        
+        // Fetch mappings
+        const mappingsRes = await facultySubjectMappingService.getAllMappings();
+        
+        setFaculties(facultiesData.data?.faculty || []);
+        setSubjects(subjectsData.data || []);
+        setBatches(batchesData.data || []);
+        setSections(sectionsData.data || []);
+        setMappings(mappingsRes.data || []);
         
         // Set default academic year from current date
         const currentYear = new Date().getFullYear();
@@ -169,7 +135,7 @@ const FacultySubjectMappingPage: React.FC = () => {
         setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Failed to fetch required data. Please try again.');
+        setError('Failed to load data. Please try again later.');
         setLoading(false);
       }
     };
@@ -204,42 +170,25 @@ const FacultySubjectMappingPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Setup axios configuration for direct API call
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-      const token = localStorage.getItem('token');
-      
-      const response = await axios({
-        method: 'POST',
-        baseURL,
-        url: '/faculty-subject-mapping',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        data: formData
-      });
+      const response = await facultySubjectMappingService.createMapping(formData);
       
       // Add new mapping to the state
-      if (response.data?.success && response.data?.data) {
-        setMappings(prev => [response.data.data, ...prev]);
-        
-        // Reset form
-        setFormData({
-          facultyId: '',
-          subjectId: '',
-          section: '',
-          semester: '',
-          batchId: '',
-          academicYear: formData.academicYear, // Keep academic year
-          componentScope: 'theory',
-          isPrimary: true
-        });
-        
-        setSuccess('Faculty-Subject mapping created successfully');
-        setTimeout(() => setSuccess(null), 5000);
-      } else {
-        setError('Failed to create mapping: Invalid response from server');
-      }
+      setMappings(prev => [response.data, ...prev]);
+      
+      // Reset form
+      setFormData({
+        facultyId: '',
+        subjectId: '',
+        section: '',
+        semester: '',
+        batchId: '',
+        academicYear: formData.academicYear, // Keep academic year
+        componentScope: 'theory',
+        isPrimary: true
+      });
+      
+      setSuccess('Faculty-Subject mapping created successfully');
+      setTimeout(() => setSuccess(null), 5000);
       
       setLoading(false);
     } catch (err: any) {
@@ -254,20 +203,7 @@ const FacultySubjectMappingPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Setup axios configuration for direct API call
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-      const token = localStorage.getItem('token');
-      
-      await axios({
-        method: 'PUT',
-        baseURL,
-        url: `/faculty-subject-mapping/status/${mapping.id}`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        data: { active: newStatus }
-      });
+      await facultySubjectMappingService.updateMappingStatus(mapping.id, newStatus);
       
       // Update mapping in the state
       setMappings(prev => 
@@ -292,19 +228,7 @@ const FacultySubjectMappingPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Setup axios configuration for direct API call
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-      const token = localStorage.getItem('token');
-      
-      await axios({
-        method: 'DELETE',
-        baseURL,
-        url: `/faculty-subject-mapping/${selectedMapping.id}`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await facultySubjectMappingService.deleteMapping(selectedMapping.id);
       
       // Remove mapping from state
       setMappings(prev => prev.filter(m => m.id !== selectedMapping.id));
