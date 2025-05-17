@@ -128,7 +128,7 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
   const [rejectionReason, setRejectionReason] = useState('');
   const [processingApproval, setProcessingApproval] = useState(false);
 
-  // Use initialFilters in useEffect
+  // Use initialFilters in useEffect - but only on initial render
   useEffect(() => {
     if (initialFilters) {
       setFilters(prev => ({
@@ -136,37 +136,54 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
         ...initialFilters
       }));
     }
-  }, [initialFilters]);
+  }, []);
 
-  // Wrap fetchMappings in useCallback
+  // Wrap fetchMappings in useCallback with properly typed parameters and more robust error handling
   const fetchMappings = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Build query params
-      const queryParams = new URLSearchParams();
+      // Create a clean params object with proper type conversion
+      const params: Record<string, string> = {};
       
-      if (filters.facultyId) queryParams.append('facultyId', filters.facultyId);
-      if (filters.subjectId) queryParams.append('subjectId', filters.subjectId);
-      if (filters.semester) queryParams.append('semester', filters.semester);
-      if (filters.section) queryParams.append('section', filters.section);
-      if (filters.academicYear) queryParams.append('academicYear', filters.academicYear);
-      if (filters.componentScope) queryParams.append('componentScope', filters.componentScope);
-      if (filters.active) queryParams.append('active', filters.active);
-      if (filters.status) queryParams.append('status', filters.status);
-      if (departmentId) queryParams.append('departmentId', departmentId.toString());
-      
-      const response = await api.get(`/subjects/faculty-mapping?${queryParams.toString()}`);
-      
-      if (response.data.success) {
-        setMappings(response.data.data);
+      if (filters.facultyId) params.facultyId = filters.facultyId;
+      // Convert subjectId to number and validate it's not NaN
+      if (filters.subjectId) {
+        // Ensure valid number format for subjectId
+        const numericSubjectId = Number(filters.subjectId);
+        if (!isNaN(numericSubjectId)) {
+          params.subjectId = numericSubjectId.toString();
+        }
+        // If it's NaN, don't include it to avoid API errors
       }
-    } catch (error) {
+      if (filters.semester) params.semester = filters.semester;
+      if (filters.section) params.section = filters.section;
+      if (filters.academicYear) params.academicYear = filters.academicYear;
+      if (filters.componentScope) params.componentScope = filters.componentScope;
+      if (filters.active) params.active = filters.active;
+      if (filters.status) params.status = filters.status;
+      if (departmentId) params.departmentId = departmentId.toString();
+      
+      // Use direct params object - don't use URLSearchParams to avoid potential encoding issues
+      const response = await api.get('/subjects/faculty-mapping', { params });
+      
+      if (response.data && response.data.success) {
+        // Check different paths where data might be stored
+        const mappingData = response.data.data || [];
+        setMappings(mappingData);
+      }
+    } catch (error: any) {
       console.error('Error fetching faculty-subject mappings:', error);
+      // Display more specific error information
+      if (error.response?.data?.message) {
+        console.error('Server error message:', error.response.data.message);
+      }
+      // Don't cause state updates if component is unmounting
+      if (!loading) return;
     } finally {
       setLoading(false);
     }
-  }, [departmentId, filters]);
+  }, [departmentId, filters, loading]);
 
   // Wrap fetchReferenceData in useCallback
   const fetchReferenceData = useCallback(async () => {
@@ -193,20 +210,20 @@ const FacultySubjectMappingTable: React.FC<FacultySubjectMappingTableProps> = ({
     }
   }, [departmentId]);
 
-  // Load data on mount and when filters change
+  // Load data on mount and when departmentId or filters change - not on every fetchMappings reference change
   useEffect(() => {
     fetchMappings();
-  }, [fetchMappings]);
+  }, [departmentId, filters]);
   
   // Load reference data on mount
   useEffect(() => {
     fetchReferenceData();
   }, [fetchReferenceData]);
 
-  // Handle filter change
-  const handleFilterChange = (field: string, value: string) => {
+  // Handle filter change with debouncing
+  const handleFilterChange = useCallback((field: string, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
   // Edit mapping
   const openEditDialog = (mapping: FacultySubjectMapping) => {

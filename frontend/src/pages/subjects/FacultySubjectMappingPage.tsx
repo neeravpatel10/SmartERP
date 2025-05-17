@@ -8,7 +8,7 @@ import {
   Tab
   // Alert, // Unused
   // CircularProgress, // Unused
-} from '@mui/material';
+} from '@mui/material'
 import FacultySubjectMappingTable from '../../components/subjects/FacultySubjectMappingTable';
 import FacultySubjectMappingForm from '../../components/subjects/FacultySubjectMappingForm';
 import { useAuth } from '../../contexts/AuthContext';

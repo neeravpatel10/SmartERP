@@ -49,7 +49,8 @@ import UserProfileEdit from './pages/admin/UserProfileEdit';
 // Subject routes
 import SubjectsPage from './pages/subjects/SubjectsPage';
 import SubjectDetail from './pages/subjects/SubjectDetail';
-import FacultySubjectMappingPage from './pages/admin/FacultySubjectMappingPage';
+// import FacultySubjectMappingPage from './pages/admin/FacultySubjectMappingPage'; // Old implementation
+import FacultySubjectMappingPage from './pages/subjects/FacultySubjectMappingPage'; // New implementation
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
 import FacultySubjectStudents from './pages/faculty/FacultySubjectStudents';
 
