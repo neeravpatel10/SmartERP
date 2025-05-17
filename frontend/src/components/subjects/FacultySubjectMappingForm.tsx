@@ -6,7 +6,6 @@ import {
   FormControl,
   Select,
   MenuItem,
-  TextField,
   Button,
   Grid,
   FormControlLabel,
@@ -127,6 +126,7 @@ const FacultySubjectMappingForm = ({
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [availableSections, setAvailableSections] = useState<string[]>([]);
   const [existingMappings, setExistingMappings] = useState<ExistingMapping[]>([]);
   
   // We'll keep this state declaration but comment it out since it's not currently used
@@ -333,6 +333,7 @@ const FacultySubjectMappingForm = ({
       try {
         // Direct axios call for faculty with department filter
         facultyRes = await axios.get(`http://localhost:3000/api/faculty?departmentId=${departmentIdStr}`, axiosConfig);
+        console.log('Faculty data fetched for department:', departmentIdStr);
       } catch (err: any) {
         console.error('Error fetching faculty:', err);
       }
@@ -363,17 +364,36 @@ const FacultySubjectMappingForm = ({
           subjectsData = [];
         }
         setAllSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+        console.log('Subjects loaded:', Array.isArray(subjectsData) ? subjectsData.length : 0);
       } else {
         setAllSubjects([]);
       }
       
-      // Process faculty with null check and ensure array type
+      // Process faculty with null check and ensure array type (handle nested structure like subjects)
       if (facultyRes?.data && facultyRes.data.success) {
-        // Explicit check to ensure we're setting a valid array
-        const facultyData = Array.isArray(facultyRes.data.data) ? facultyRes.data.data : [];
-        setFaculties(facultyData);
+        console.log('Raw faculty response:', facultyRes.data);
+        
+        // Check different paths where faculty data might be based on API response structure
+        let facultyData;
+        if (facultyRes.data.data?.faculty) {
+          facultyData = facultyRes.data.data.faculty;
+        } else if (facultyRes.data.faculty) {
+          facultyData = facultyRes.data.faculty;
+        } else if (Array.isArray(facultyRes.data.data)) {
+          facultyData = facultyRes.data.data;
+        } else {
+          facultyData = [];
+        }
+        
+        // Ensure we're setting a valid array and log for debugging
+        const validFacultyData = Array.isArray(facultyData) ? facultyData : [];
+        console.log('Faculty loaded for department:', departmentIdStr, validFacultyData.length);
+        console.log('Sample faculty data:', validFacultyData.slice(0, 2));
+        
+        setFaculties(validFacultyData);
       } else {
         // Always set an empty array when data is missing or invalid
+        console.log('No valid faculty data in response');
         setFaculties([]);
       }
       
@@ -411,6 +431,35 @@ const FacultySubjectMappingForm = ({
     }
   }, []);
   
+  // Handle department change - wrap in useCallback to avoid re-creation on every render
+  const handleDepartmentChange = useCallback((departmentId: string): void => {
+    // Reset relevant form fields when department changes
+    setFormData((prev) => ({
+      ...prev,
+      departmentId,
+      facultyId: '',
+      subjectId: '',
+      semester: '',
+      section: '',
+      batchId: ''
+    }));
+    
+    // Load data for the selected department
+    if (departmentId) {
+      fetchDepartmentData(departmentId);
+    } else {
+      // Reset data when no department is selected
+      setAllSubjects([]);
+      setFilteredSubjects([]);
+      setFaculties([]);
+      setBatches([]);
+    }
+    
+    // Clear messages
+    if (error) setError(null);
+    if (success) setSuccess(null);
+  }, [fetchDepartmentData, setError, setSuccess, error, success]);
+
   // When department changes or initial automatic department selection
   useEffect(() => {
     // Auto-select department for Dept Admin
@@ -431,7 +480,7 @@ const FacultySubjectMappingForm = ({
       console.log('Auto-selecting the only available department:', departments[0]);
       handleDepartmentChange(departments[0].id.toString());
     }
-  }, [departments, isSuperAdmin, formData.departmentId]);
+  }, [departments, isSuperAdmin, formData.departmentId, handleDepartmentChange]);
   
   // Filter subjects based on existing mappings
   useEffect(() => {
@@ -458,35 +507,6 @@ const FacultySubjectMappingForm = ({
     setFilteredSubjects(availableSubjects);
   }, [allSubjects, existingMappings, formData.academicYear, formData.section]);
 
-  // Handle department change
-  const handleDepartmentChange = (departmentId: string): void => {
-    // Reset relevant form fields when department changes
-    setFormData((prev) => ({
-      ...prev,
-      departmentId,
-      facultyId: '',
-      subjectId: '',
-      semester: '',
-      section: '',
-      batchId: ''
-    }));
-    
-    // Load data for the selected department
-    if (departmentId) {
-      fetchDepartmentData(departmentId);
-    } else {
-      // Reset data when no department is selected
-      setAllSubjects([]);
-      setFilteredSubjects([]);
-      setFaculties([]);
-      setBatches([]);
-    }
-    
-    // Clear messages
-    if (error) setError(null);
-    if (success) setSuccess(null);
-  };
-
   // Handle form input changes
   const handleChange = (field: keyof FormData, value: string | boolean): void => {
     setFormData((prev) => ({
@@ -499,6 +519,52 @@ const FacultySubjectMappingForm = ({
     if (success) setSuccess(null);
   };
 
+  // Fetch available sections based on departmentId and semester
+  const fetchSections = useCallback(async (departmentId: string, semester: string): Promise<void> => {
+    if (!departmentId || !semester) {
+      setAvailableSections([]);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://localhost:3000/api/sections?departmentId=${departmentId}&semester=${semester}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data && response.data.success) {
+        // Handle different possible response structures
+        let sectionsData;
+        if (response.data.data?.sections) {
+          sectionsData = response.data.data.sections;
+        } else if (Array.isArray(response.data.data)) {
+          sectionsData = response.data.data;
+        } else {
+          sectionsData = [];
+        }
+
+        // Extract section names/values
+        const sectionValues = Array.isArray(sectionsData) 
+          ? sectionsData.map((section: any) => section.name || section.value || section.code || section) 
+          : [];
+        
+        console.log('Available sections fetched:', sectionValues);
+        setAvailableSections(sectionValues);
+      } else {
+        setAvailableSections([]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching sections:', err);
+      setAvailableSections([]);
+    }
+  }, []);
+
   // Handle subject selection to auto-populate semester, section, and batchId
   const handleSubjectSelect = (subjectId: string): void => {
     if (!subjectId) {
@@ -510,6 +576,7 @@ const FacultySubjectMappingForm = ({
         section: '',
         batchId: ''
       }));
+      setAvailableSections([]);
       return;
     }
     
@@ -519,14 +586,21 @@ const FacultySubjectMappingForm = ({
     );
     
     if (selectedSubject) {
+      console.log('Selected subject:', selectedSubject);
+      const semesterValue = selectedSubject.semester.toString();
+      const sectionValue = selectedSubject.section || '';
+      
       // Auto-fill fields from subject data
       setFormData((prev) => ({
         ...prev,
         subjectId,
-        semester: selectedSubject.semester.toString(),
-        section: selectedSubject.section || '',
+        semester: semesterValue,
+        section: sectionValue,
         batchId: selectedSubject.batchId || ''
       }));
+      
+      // Fetch available sections for this department and semester
+      fetchSections(formData.departmentId, semesterValue);
     } else {
       // Reset if subject not found
       setFormData((prev) => ({
@@ -536,6 +610,7 @@ const FacultySubjectMappingForm = ({
         section: '',
         batchId: ''
       }));
+      setAvailableSections([]);
     }
   };
 
@@ -660,6 +735,11 @@ const FacultySubjectMappingForm = ({
   const displayedFaculties = formData.showAllFaculty ?
     (Array.isArray(allFaculties) ? allFaculties : []) :
     (Array.isArray(faculties) ? faculties : []);
+    
+  // Log faculty data for debugging
+  console.log('Displayed faculty count:', displayedFaculties.length);
+  console.log('Current faculties state:', faculties);
+  console.log('All faculties state:', allFaculties);
 
   return (
     <Paper sx={{ p: 3 }}>
@@ -748,23 +828,49 @@ const FacultySubjectMappingForm = ({
                   </Typography>
                   <FormControl fullWidth required>
                     <Select
-                      value={formData.facultyId}
+                      value={formData.facultyId || ""}
                       onChange={(e: SelectChangeEvent) => handleChange('facultyId', e.target.value as string)}
                       displayEmpty
                       sx={{ height: '48px' }}
                       disabled={loading}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxHeight: 300
+                          },
+                        },
+                      }}
                     >
                       <MenuItem value=""><em>Select Faculty</em></MenuItem>
-                      {Array.isArray(displayedFaculties) && displayedFaculties.map((faculty) => (
-                        <MenuItem key={faculty.id} value={faculty.id.toString()}>
-                          {faculty.name}
-                          {faculty.department && formData.showAllFaculty && (
-                            <Typography component="span" variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-                              ({faculty.department.code})
-                            </Typography>
-                          )}
+                      {displayedFaculties.length === 0 ? (
+                        // Show message when no faculty is available
+                        <MenuItem disabled value="none">
+                          <em>No faculty found for this department</em>
                         </MenuItem>
-                      ))}
+                      ) : (
+                        // Debug each faculty with console.log
+                        displayedFaculties.map((faculty, index) => {
+                          // Debug log each faculty item
+                          console.log(`Faculty ${index}:`, faculty);
+                          
+                          // Get a safe faculty ID value
+                          const facultyId = faculty.id ? faculty.id.toString() : String(index);
+                          
+                          // Get a safe faculty name
+                          const facultyName = faculty.name || `Faculty ${index}`;
+                          
+                          return (
+                            <MenuItem key={`faculty-${facultyId}-${index}`} value={facultyId}>
+                              {facultyName}
+                              {faculty.department && formData.showAllFaculty && (
+                                <Typography component="span" variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                                  ({faculty.department.code || faculty.department.name || "?"})
+                                </Typography>
+                              )}
+                            </MenuItem>
+                          );
+                        })
+                      )}
                     </Select>
                   </FormControl>
                   <FormControlLabel
@@ -819,11 +925,18 @@ const FacultySubjectMappingForm = ({
                   </Typography>
                   <FormControl fullWidth required>
                     <Select
-                      value={formData.batchId}
+                      value={formData.batchId || ""}
                       onChange={(e: SelectChangeEvent) => handleChange('batchId', e.target.value as string)}
                       displayEmpty
                       sx={{ height: '48px' }}
-                      disabled={!!formData.subjectId || loading}
+                      disabled={loading}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxHeight: 300
+                          },
+                        },
+                      }}
                     >
                       <MenuItem value=""><em>Select Batch</em></MenuItem>
                       {Array.isArray(batches) && batches.map((batch) => (
@@ -842,14 +955,35 @@ const FacultySubjectMappingForm = ({
                   <Typography variant="body1" sx={{ mb: 1 }}>
                     Section
                   </Typography>
-                  <TextField
-                    fullWidth
-                    placeholder="All Sections"
-                    value={formData.section}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('section', e.target.value)}
-                    disabled={!!formData.subjectId || loading}
-                    sx={{ height: '48px' }}
-                  />
+                  <FormControl fullWidth>
+                    <Select
+                      value={formData.section || ""}
+                      onChange={(e: SelectChangeEvent) => handleChange('section', e.target.value as string)}
+                      displayEmpty
+                      sx={{ height: '48px' }}
+                      disabled={loading}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxHeight: 300
+                          },
+                        },
+                      }}
+                    >
+                      <MenuItem value=""><em>Select Section</em></MenuItem>
+                      {availableSections.length > 0 ? (
+                        // Show available sections if fetched
+                        availableSections.map((section) => (
+                          <MenuItem key={section} value={section}>
+                            {section}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        // If no sections available, show manual input option
+                        <MenuItem value="ALL">ALL</MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
                 </Box>
               </Grid>
 
