@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Paper,
   Typography,
@@ -12,6 +12,8 @@ import {
   Switch,
   Alert,
   CircularProgress,
+  TextField,
+  Autocomplete,
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import axios from 'axios';
@@ -128,6 +130,7 @@ const FacultySubjectMappingForm = ({
   const [batches, setBatches] = useState<Batch[]>([]);
   const [availableSections, setAvailableSections] = useState<string[]>([]);
   const [existingMappings, setExistingMappings] = useState<ExistingMapping[]>([]);
+  const [isFacultyLoading, setIsFacultyLoading] = useState<boolean>(false);
   
   // We'll keep this state declaration but comment it out since it's not currently used
   // const [renderKey, setRenderKey] = useState<number>(Date.now());
@@ -248,58 +251,52 @@ const FacultySubjectMappingForm = ({
       isMounted = false;
     };
   }, []);
-  // Fetch all faculties once for the "show all faculty" option using direct axios call
-  useEffect(() => {
-    let isMounted = true;
-    let isDone = false;
+  // Fetch all faculties with explicit pagination limit to get ALL faculties at once
+  const fetchAllFaculties = useCallback(async (): Promise<void> => {
+    setIsFacultyLoading(true);
     
-    const fetchAllFaculties = async (): Promise<void> => {
-      if (!isMounted || isDone) return;
+    try {
+      // Use direct axios call with explicit limit parameter to fetch all records
+      const response = await axios.get('http://localhost:3000/api/faculty?limit=1000', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
-      try {
-        // Use direct axios call to avoid API utility wrapper issues
-        const response = await axios.get('http://localhost:3000/api/faculty', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        
-        // Guard against race conditions
-        if (!isMounted || isDone) return;
-        isDone = true;
-        
-        if (response.data && response.data.success) {
-          // Ensure we're setting a valid array, adding explicit type check
-          const facultyData = Array.isArray(response.data.data) ? response.data.data : [];
-          setAllFaculties(facultyData);
+      if (response.data && response.data.success) {
+        // Extract faculty data from the response, handling possible nesting
+        let facultyData;
+        if (response.data.data?.faculty) {
+          facultyData = response.data.data.faculty;
+        } else if (Array.isArray(response.data.data)) {
+          facultyData = response.data.data;
         } else {
-          // Set empty array as fallback
-          setAllFaculties([]);
+          facultyData = [];
         }
-      } catch (err: any) {
-        // Only log errors if component is still mounted
-        if (!isMounted || isDone) return;
-        isDone = true;
         
-        console.error('Error fetching all faculties:', err);
-        // Just log errors for non-critical data
-        setAllFaculties([]); // Set empty array as fallback
-      } finally {
-        if (isMounted && !isDone) {
-          // Ensure we only update state once
-          setLoading(false);
-        }
+        // Ensure we're setting a valid array
+        const validFacultyData = Array.isArray(facultyData) ? facultyData : [];
+        console.log('All faculties loaded:', validFacultyData.length);
+        
+        setAllFaculties(validFacultyData);
+      } else {
+        // Set empty array as fallback
+        setAllFaculties([]);
+        console.log('No faculty data found in response');
       }
-    };
-
-    fetchAllFaculties();
-    
-    // Cleanup to avoid state updates after unmount
-    return () => {
-      isMounted = false;
-    };
+    } catch (err: any) {
+      console.error('Error fetching all faculties:', err);
+      setAllFaculties([]); // Set empty array as fallback
+    } finally {
+      setIsFacultyLoading(false);
+    }
   }, []);
+  
+  // Load all faculties once when component mounts
+  useEffect(() => {
+    fetchAllFaculties();
+  }, [fetchAllFaculties]);
   
   // Fetch data based on selected department using direct axios calls for reliability
   const fetchDepartmentData = useCallback(async (deptId: string | number): Promise<void> => {
@@ -331,8 +328,8 @@ const FacultySubjectMappingForm = ({
       }
       
       try {
-        // Direct axios call for faculty with department filter
-        facultyRes = await axios.get(`http://localhost:3000/api/faculty?departmentId=${departmentIdStr}`, axiosConfig);
+        // Direct axios call for faculty with department filter and maximum limit
+        facultyRes = await axios.get(`http://localhost:3000/api/faculty?departmentId=${departmentIdStr}&limit=1000`, axiosConfig);
         console.log('Faculty data fetched for department:', departmentIdStr);
       } catch (err: any) {
         console.error('Error fetching faculty:', err);
@@ -390,7 +387,13 @@ const FacultySubjectMappingForm = ({
         console.log('Faculty loaded for department:', departmentIdStr, validFacultyData.length);
         console.log('Sample faculty data:', validFacultyData.slice(0, 2));
         
+        // Set department faculties in state
         setFaculties(validFacultyData);
+        
+        // Also ensure all faculties are loaded for cross-department selection
+        if (allFaculties.length === 0) {
+          void fetchAllFaculties(); 
+        }
       } else {
         // Always set an empty array when data is missing or invalid
         console.log('No valid faculty data in response');
@@ -429,7 +432,7 @@ const FacultySubjectMappingForm = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allFaculties.length, fetchAllFaculties]);  // Added missing dependencies
   
   // Handle department change - wrap in useCallback to avoid re-creation on every render
   const handleDepartmentChange = useCallback((departmentId: string): void => {
@@ -731,15 +734,34 @@ const FacultySubjectMappingForm = ({
     }
   };
 
-  // Get displayed faculty list based on showAllFaculty toggle with array safety
-  const displayedFaculties = formData.showAllFaculty ?
-    (Array.isArray(allFaculties) ? allFaculties : []) :
-    (Array.isArray(faculties) ? faculties : []);
+  // Create comprehensive faculty list combining department faculty and others
+  const displayedFaculties = useMemo(() => {
+    if (!formData.departmentId) {
+      return []; // Don't show any faculty if no department is selected
+    }
     
-  // Log faculty data for debugging
-  console.log('Displayed faculty count:', displayedFaculties.length);
-  console.log('Current faculties state:', faculties);
-  console.log('All faculties state:', allFaculties);
+    // If not showing all faculties, just return the department faculties
+    if (!formData.showAllFaculty) {
+      return Array.isArray(faculties) ? faculties : [];
+    }
+    
+    // When showing all faculties, separate department faculty from others
+    const deptFaculty = Array.isArray(faculties) ? faculties : [];
+    const deptFacultyIds = new Set(deptFaculty.map(f => f.id?.toString()));
+    
+    // Filter out faculty from the selected department to avoid duplicates
+    const otherFaculty = Array.isArray(allFaculties) 
+      ? allFaculties.filter(f => !deptFacultyIds.has(f.id?.toString()))
+      : [];
+    
+    // Combine department faculty first, then all others
+    const combinedFaculty = [...deptFaculty, ...otherFaculty];
+    
+    // Log faculty data for debugging
+    console.log(`Faculty list: ${deptFaculty.length} from dept + ${otherFaculty.length} from other depts = ${combinedFaculty.length} total`);
+    
+    return combinedFaculty;
+  }, [formData.departmentId, formData.showAllFaculty, faculties, allFaculties]);
 
   return (
     <Paper sx={{ p: 3 }}>
@@ -820,59 +842,79 @@ const FacultySubjectMappingForm = ({
           {/* Continue with the form only when a department is selected */}
           {formData.departmentId && (
             <>
-              {/* Faculty Field - Appears first based on screenshot */}
+              {/* Faculty Field with Autocomplete for advanced search */}
               <Grid item xs={12}>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body1" sx={{ mb: 1 }}>
                     Faculty *
                   </Typography>
-                  <FormControl fullWidth required>
-                    <Select
-                      value={formData.facultyId || ""}
-                      onChange={(e: SelectChangeEvent) => handleChange('facultyId', e.target.value as string)}
-                      displayEmpty
-                      sx={{ height: '48px' }}
-                      disabled={loading}
-                      MenuProps={{
-                        PaperProps: {
-                          style: {
-                            maxHeight: 300
-                          },
-                        },
-                      }}
-                    >
-                      <MenuItem value=""><em>Select Faculty</em></MenuItem>
-                      {displayedFaculties.length === 0 ? (
-                        // Show message when no faculty is available
-                        <MenuItem disabled value="none">
-                          <em>No faculty found for this department</em>
-                        </MenuItem>
-                      ) : (
-                        // Debug each faculty with console.log
-                        displayedFaculties.map((faculty, index) => {
-                          // Debug log each faculty item
-                          console.log(`Faculty ${index}:`, faculty);
-                          
-                          // Get a safe faculty ID value
-                          const facultyId = faculty.id ? faculty.id.toString() : String(index);
-                          
-                          // Get a safe faculty name
-                          const facultyName = faculty.name || `Faculty ${index}`;
-                          
-                          return (
-                            <MenuItem key={`faculty-${facultyId}-${index}`} value={facultyId}>
-                              {facultyName}
-                              {faculty.department && formData.showAllFaculty && (
-                                <Typography component="span" variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-                                  ({faculty.department.code || faculty.department.name || "?"})
-                                </Typography>
-                              )}
-                            </MenuItem>
-                          );
-                        })
-                      )}
-                    </Select>
-                  </FormControl>
+                  <Autocomplete<Faculty, false, false, false>
+                    id="faculty-autocomplete"
+                    options={displayedFaculties}
+                    loading={isFacultyLoading}
+                    loadingText="Loading faculty members..."
+                    getOptionLabel={(option: Faculty) => {
+                      const facultyName = option.name || 'Unknown Faculty';
+                      // Add department info for faculty from other departments
+                      if (formData.showAllFaculty && option.department && 
+                          option.department.id?.toString() !== formData.departmentId) {
+                        const deptCode = option.department.code || option.department.name || '?';
+                        return `${facultyName} (${deptCode})`;
+                      }
+                      return facultyName;
+                    }}
+                    groupBy={(option: Faculty) => {
+                      // Group by department when showing all faculty
+                      if (formData.showAllFaculty && option.department) {
+                        if (option.department.id?.toString() === formData.departmentId) {
+                          return 'Selected Department';
+                        } else {
+                          return 'Other Departments';
+                        }
+                      }
+                      return '';
+                    }}
+                    isOptionEqualToValue={(option: Faculty, value: Faculty) => {
+                      return option.id?.toString() === value.id?.toString();
+                    }}
+                    value={displayedFaculties.find(f => f.id?.toString() === formData.facultyId) || null}
+                    onChange={(_event: React.SyntheticEvent, newValue: Faculty | null) => {
+                      handleChange('facultyId', newValue?.id?.toString() || '');
+                    }}
+                    renderInput={(params: React.ComponentProps<typeof TextField>) => (
+                      <TextField 
+                        {...params} 
+                        label="Search Faculty" 
+                        placeholder={displayedFaculties.length === 0 ? 'No faculty available' : 'Type to search...'}
+                        required 
+                        disabled={!formData.departmentId || loading}
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {isFacultyLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                      />
+                    )}
+                    disabled={!formData.departmentId || loading}
+                    noOptionsText="No faculty found with that name"
+                    renderOption={(props: React.HTMLAttributes<HTMLLIElement>, option: Faculty) => (
+                      <li {...props} key={option.id?.toString() || `faculty-${Math.random()}`}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                          <Typography variant="body1">{option.name || 'Unknown Faculty'}</Typography>
+                          {option.department && (
+                            <Typography variant="caption" color="text.secondary">
+                              {option.designation || 'Faculty'} 
+                              {option.department && ` • ${option.department.name || option.department.code || '?'}`}
+                            </Typography>
+                          )}
+                        </Box>
+                      </li>
+                    )}
+                  />
                   <FormControlLabel
                     control={
                       <Switch
