@@ -341,7 +341,8 @@ export const createMapping = async (req: Request, res: Response) => {
         active: true,
         status: facultysubjectmapping_status.approved, // Auto-approve for admin created mappings
         approvedAt: new Date(),
-        approvedBy: user.id
+        approvedBy: user.id,
+        updatedAt: new Date()
       },
       include: {
         faculty: {

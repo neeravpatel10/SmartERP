@@ -45,6 +45,13 @@ interface Subject {
   semester: number;
   departmentId: number;
   section?: string;
+  sectionId?: number;
+  sectionRelation?: {
+    id: number;
+    name: string;
+    batchId?: string;
+  };
+  academicYear?: string;
   batchId?: string;
   department?: {
     id: number;
@@ -103,18 +110,10 @@ const FacultySubjectMappingForm = ({
 }: FacultySubjectMappingFormProps): React.ReactElement => {
   const { user } = useAuth();
   
-  // Add detailed logging of user object to debug auth issues
-  console.log('User object:', user);
-  console.log('User login type:', user?.loginType);
-  
   // Department logic: Auto-filled for Dept Admin, dropdown for Super Admin
   const isDeptAdmin = user?.loginType === 3;
   const isSuperAdmin = user?.loginType === 1;
   const userDeptId = user?.departmentId;
-  
-  console.log('isSuperAdmin:', isSuperAdmin);
-  console.log('isDeptAdmin:', isDeptAdmin);
-  console.log('userDeptId:', userDeptId);
 
   const [formData, setFormData] = useState<FormData>({
     ...initialFormData,
@@ -128,7 +127,8 @@ const FacultySubjectMappingForm = ({
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [availableSections, setAvailableSections] = useState<string[]>([]);
+  // We only use the setter, not the value directly
+  const [, setAvailableSections] = useState<string[]>([]);
   const [existingMappings, setExistingMappings] = useState<ExistingMapping[]>([]);
   const [isFacultyLoading, setIsFacultyLoading] = useState<boolean>(false);
   
@@ -141,7 +141,9 @@ const FacultySubjectMappingForm = ({
   const [success, setSuccess] = useState<string | null>(null);
   
   // Use imported utility function to get academic year options
-  const academicYearOptions = getAcademicYearOptions(1, 1);
+  // Initializing academicYear with current year, but not using options in the UI
+  // We're keeping the function call for future reference
+  getAcademicYearOptions(1, 1); // Generate options but not storing in a variable
 
   // Load departments data from API safely using direct API call to avoid configuration issues
   useEffect(() => {
@@ -320,8 +322,10 @@ const FacultySubjectMappingForm = ({
       let subjectsRes, facultyRes, batchesRes, mappingsRes;
       
       try {
-        // Direct axios call for subjects with department filter
-        subjectsRes = await axios.get(`http://localhost:3000/api/subjects?departmentId=${departmentIdStr}`, axiosConfig);
+        // Direct axios call for subjects with department filter and include section relations
+        subjectsRes = await axios.get(`http://localhost:3000/api/subjects?departmentId=${departmentIdStr}&includeRelations=true&includeSections=true`, axiosConfig);
+        console.log('Subjects API request:', `http://localhost:3000/api/subjects?departmentId=${departmentIdStr}&includeRelations=true&includeSections=true`);
+        console.log('Subjects API response:', subjectsRes?.data);
       } catch (err: any) {
         console.error('Error fetching subjects:', err);
         // Continue with other requests - don't block all data loading
@@ -336,8 +340,9 @@ const FacultySubjectMappingForm = ({
       }
       
       try {
-        // Direct axios call for batches with department filter
-        batchesRes = await axios.get(`http://localhost:3000/api/batches?departmentId=${departmentIdStr}`, axiosConfig);
+        // Direct axios call for batches with department filter and increased limit
+        batchesRes = await axios.get(`http://localhost:3000/api/batches?departmentId=${departmentIdStr}&limit=100`, axiosConfig);
+        console.log('Batch API request:', `http://localhost:3000/api/batches?departmentId=${departmentIdStr}&limit=100`);
       } catch (err: any) {
         console.error('Error fetching batches:', err);
       }
@@ -402,11 +407,22 @@ const FacultySubjectMappingForm = ({
       
       // Process batches with null check and type safety
       if (batchesRes?.data && batchesRes.data.success) {
-        // Explicit check to ensure we're setting a valid array
-        const batchesData = Array.isArray(batchesRes.data.data) ? batchesRes.data.data : [];
-        setBatches(batchesData);
+        // Check different paths where batches data might be based on API response structure
+        let batchesData;
+        if (batchesRes.data.data?.batches) {
+          batchesData = batchesRes.data.data.batches;
+        } else if (Array.isArray(batchesRes.data.data)) {
+          batchesData = batchesRes.data.data;
+        } else {
+          batchesData = [];
+        }
+        
+        // Ensure it's an array and log for debugging
+        const validBatchesData = Array.isArray(batchesData) ? batchesData : [];
+        console.log('Batches loaded:', validBatchesData.length, validBatchesData);
+        setBatches(validBatchesData);
       } else {
-        // Always set an empty array when data is missing or invalid
+        console.log('No valid batch data in response:', batchesRes?.data);
         setBatches([]);
       }
       
@@ -568,8 +584,8 @@ const FacultySubjectMappingForm = ({
     }
   }, []);
 
-  // Handle subject selection to auto-populate semester, section, and batchId
-  const handleSubjectSelect = (subjectId: string): void => {
+  // Handle subject selection to auto-populate semester, section, and academicYear (metadata)
+  const handleSubjectSelect = async (subjectId: string): Promise<void> => {
     if (!subjectId) {
       // Reset fields if no subject selected
       setFormData((prev) => ({
@@ -577,7 +593,8 @@ const FacultySubjectMappingForm = ({
         subjectId: '',
         semester: '',
         section: '',
-        batchId: ''
+        batchId: '',
+        academicYear: getCurrentAcademicYear() // Reset to default academic year
       }));
       setAvailableSections([]);
       return;
@@ -589,20 +606,136 @@ const FacultySubjectMappingForm = ({
     );
     
     if (selectedSubject) {
-      console.log('Selected subject:', selectedSubject);
-      const semesterValue = selectedSubject.semester.toString();
-      const sectionValue = selectedSubject.section || '';
+      // Log the full subject object for debugging
+      console.log('Selected subject FULL DETAILS:', JSON.stringify(selectedSubject, null, 2));
+      console.log('Subject ID:', selectedSubject.id);
+      console.log('Subject Name:', selectedSubject.name);
+      console.log('Subject Code:', selectedSubject.code);
+      console.log('Subject Semester:', selectedSubject.semester);
+      console.log('Subject Section:', selectedSubject.section);
+      console.log('Subject SectionId:', selectedSubject.sectionId);
+      console.log('Subject SectionRelation:', selectedSubject.sectionRelation);
+      console.log('Subject DepartmentId:', selectedSubject.departmentId);
+      console.log('Subject Academic Year:', selectedSubject.academicYear);
+      console.log('Subject Batch ID:', selectedSubject.batchId);
       
-      // Auto-fill fields from subject data
-      setFormData((prev) => ({
-        ...prev,
+      // Get semester from subject - ensure it's a valid numeric value
+      let semesterValue = '';
+      if (selectedSubject.semester !== undefined && selectedSubject.semester !== null) {
+        semesterValue = selectedSubject.semester.toString();
+        console.log('Using semester from subject:', semesterValue);
+      }
+      
+      // Get section details from the section table if sectionId exists
+      let sectionValue = '';
+      let batchIdValue = '';
+      
+      // Try to get section directly from subject
+      if (selectedSubject.section) {
+        sectionValue = selectedSubject.section;
+        console.log('Using direct section from subject:', sectionValue);
+      }
+      
+      // Try to get section from sectionRelation if exists
+      if (!sectionValue && selectedSubject.sectionRelation) {
+        sectionValue = selectedSubject.sectionRelation.name || '';
+        console.log('Using section from sectionRelation:', sectionValue);
+      }
+      
+      // Try to get section from sectionId API call
+      if (selectedSubject.sectionId) {
+        try {
+          console.log('Fetching section details for sectionId:', selectedSubject.sectionId);
+          const token = localStorage.getItem('token');
+          const response = await axios.get(
+            `http://localhost:3000/api/sections/${selectedSubject.sectionId}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+          
+          console.log('Section API full response:', response.data);
+          
+          if (response.data && response.data.success) {
+            const sectionData = response.data.data;
+            console.log('Section data from API:', sectionData);
+            // Override section value if API call successful
+            if (sectionData && sectionData.name) {
+              sectionValue = sectionData.name;
+              console.log('Section value from API call:', sectionValue);
+            }
+            if (sectionData && sectionData.batchId) {
+              batchIdValue = sectionData.batchId;
+              console.log('Batch ID from API call:', batchIdValue);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching section details:', err);
+        }
+      } else {
+        console.log('No sectionId available in subject, using fallbacks');
+      }
+      
+      // Final fallback if all else fails
+      if (!sectionValue) {
+        // Try extracting section from code (e.g., "BCS401-A" -> "A")
+        if (selectedSubject.code) {
+          const codeParts = selectedSubject.code.split('-');
+          if (codeParts.length > 1) {
+            sectionValue = codeParts[codeParts.length - 1];
+            console.log('Extracted section from code:', sectionValue);
+          }
+        }
+      }
+      
+      // Get batchId if not already set
+      if (!batchIdValue) {
+        batchIdValue = selectedSubject.batchId || 
+                     (selectedSubject.sectionRelation && selectedSubject.sectionRelation.batchId) || 
+                     '';
+        console.log('Using fallback batchId value:', batchIdValue);
+        
+        // If no batch ID is found in any source, try to use the first available batch from the department
+        if (!batchIdValue && Array.isArray(batches) && batches.length > 0) {
+          batchIdValue = batches[0].id;
+          console.log('No batch ID found in subject, using first available batch:', batchIdValue);
+        }
+      }
+      
+      // Final section and batch values
+      console.log('FINAL SECTION VALUE:', sectionValue);
+      console.log('FINAL BATCH ID VALUE:', batchIdValue);
+      
+      // Get academic year from subject or use current academic year
+      const academicYearValue = selectedSubject.academicYear || getCurrentAcademicYear();
+      
+      console.log('Auto-populating subject metadata:', {
+        semester: semesterValue,
+        section: sectionValue,
+        batchId: batchIdValue,
+        academicYear: academicYearValue
+      });
+      
+      // Auto-fill fields from subject data - semester, section, and academicYear are read-only metadata
+      // batchId is suggested but still editable
+      const updatedFormData = {
+        ...formData,
         subjectId,
         semester: semesterValue,
         section: sectionValue,
-        batchId: selectedSubject.batchId || ''
-      }));
+        batchId: batchIdValue, // This will still be editable
+        academicYear: academicYearValue
+      };
       
-      // Fetch available sections for this department and semester
+      console.log('FORM DATA BEING SET:', updatedFormData);
+      console.log('Section value in form data:', updatedFormData.section);
+      
+      setFormData(updatedFormData);
+      
+      // Fetch available sections for reference only (field will be read-only)
       fetchSections(formData.departmentId, semesterValue);
     } else {
       // Reset if subject not found
@@ -611,7 +744,8 @@ const FacultySubjectMappingForm = ({
         subjectId,
         semester: '',
         section: '',
-        batchId: ''
+        batchId: '',
+        academicYear: getCurrentAcademicYear()
       }));
       setAvailableSections([]);
     }
@@ -623,112 +757,130 @@ const FacultySubjectMappingForm = ({
     setSubmitting(true);
     setError(null);
     setSuccess(null);
-
-    // Validate required fields
-    if (!formData.facultyId) {
-      setError('Please select a faculty');
-      setSubmitting(false);
-      return;
-    }
     
-    if (!formData.subjectId) {
-      setError('Please select a subject');
-      setSubmitting(false);
-      return;
-    }
-    
-    if (!formData.semester) {
-      setError('Please select a semester');
-      setSubmitting(false);
-      return;
-    }
-    
-    if (!formData.batchId) {
-      setError('Please select a batch');
-      setSubmitting(false);
-      return;
-    }
-    
-    if (!formData.academicYear) {
-      setError('Please select an academic year');
-      setSubmitting(false);
-      return;
-    }
-
     try {
-      // Prepare data for submission with proper type handling
+      // Validate required fields
+      if (
+        !formData.departmentId ||
+        !formData.facultyId ||
+        !formData.subjectId ||
+        !formData.semester ||
+        !formData.batchId ||
+        !formData.academicYear
+      ) {
+        setError('Please fill in all required fields');
+        return;
+      }
+      
+      // Get user ID from localStorage if available for approvedBy field
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user.id || null;
+      
       const submissionData = {
-        facultyId: String(formData.facultyId), // Ensure string type
-        subjectId: Number(formData.subjectId), // Ensure number type
+        facultyId: String(formData.facultyId),
+        subjectId: Number(formData.subjectId),
         section: formData.section || null,
-        semester: Number(formData.semester), // Ensure number type
-        batchId: String(formData.batchId), // Ensure string type
+        semester: Number(formData.semester),
+        batchId: String(formData.batchId),
         academicYear: formData.academicYear,
-        componentScope: formData.componentScope || 'theory', // Default value
-        isPrimary: Boolean(formData.isPrimary) // Ensure boolean type
+        componentScope: formData.componentScope || 'theory',
+        isPrimary: Boolean(formData.isPrimary),
+        active: true,
+        status: 'approved',
+        approvedAt: new Date(),
+        // Add approvedBy field which is shown in the error message
+        approvedBy: userId, 
+        // Using an actual Date object for updatedAt - Prisma requires this
+        updatedAt: new Date(),
+        createdAt: new Date()
       };
-
-      // Validate numeric conversions to prevent NaN
+      
+      // Validate numeric conversions
       if (isNaN(submissionData.subjectId)) {
         setError('Invalid subject ID format');
-        setSubmitting(false);
         return;
       }
       
       if (isNaN(submissionData.semester)) {
         setError('Invalid semester format');
-        setSubmitting(false);
         return;
       }
-
-      // Make direct axios call to create mapping - bypassing api utility to avoid issues
-      const token = localStorage.getItem('token');
-      const response = await axios.post('http://localhost:3000/api/faculty-subject-mapping', submissionData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
       
-      if (response.data && response.data.success) {
-        setSuccess('Faculty subject mapping created successfully');
-        // Reset form while keeping department selected
-        const currentDeptId = formData.departmentId;
-        const showAll = formData.showAllFaculty;
-        setFormData({
-          ...initialFormData,
-          departmentId: currentDeptId,
-          showAllFaculty: showAll
-        });
+      console.log('Submitting data to API:', submissionData);
+      
+      // Use standard endpoint but with complete data including updatedAt
+      const token = localStorage.getItem('token');
+      
+      console.log('Using standard API with complete data including updatedAt');
+      
+      try {
+        console.log('Submitting mapping data with updatedAt:', submissionData);
         
-        // Update existing mappings to reflect new addition
-        setExistingMappings((prev) => [
-          ...prev, 
+        const endpoint = 'http://localhost:3000/api/faculty-subject-mapping';
+        console.log('Using standard endpoint:', endpoint);
+        
+        const response = await axios.post(
+          endpoint,
+          submissionData,
           {
-            subjectId: submissionData.subjectId,
-            section: submissionData.section,
-            academicYear: submissionData.academicYear
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
           }
-        ]);
+        );
         
-        // Notify parent component if callback is provided
-        if (onMappingCreated) onMappingCreated();
-      } else {
-        setError(response.data?.message || 'Unknown error occurred while creating mapping');
+        // Get data directly from axios response
+        const data = response.data;
+        console.log('API response:', data);
+        
+        // For axios, we need different error checking
+        if (!data.success) {
+          throw new Error(data.message || 'Server error');
+        }
+        
+        if (data && data.success) {
+          // Success! Reset form but keep department
+          setSuccess('Faculty subject mapping created successfully');
+          setFormData({
+            ...initialFormData,
+            departmentId: formData.departmentId
+          });
+          
+          // Update existing mappings to reflect new addition
+          if (typeof formData.subjectId === 'string') {
+            const newMapping = {
+              subjectId: Number(formData.subjectId),
+              section: formData.section || null,
+              academicYear: formData.academicYear
+            };
+            setExistingMappings(prev => [...prev, newMapping]);
+          }
+          
+          // Notify parent component if callback is provided
+          if (onMappingCreated) {
+            onMappingCreated();
+          }
+        } else {
+          // API returned success: false
+          setError(data.message || 'Unknown error occurred while creating mapping');
+        }
+      } catch (err: any) {
+        // Handle API errors
+        console.error('Error creating mapping:', err);
+        
+        if (err instanceof TypeError || err instanceof SyntaxError) {
+          console.error('Request error:', err.message);
+          setError(`Request error: ${err.message}`);
+        } else {
+          console.error('Server error:', err.message);
+          setError(`Server error: ${err.message}`);
+        }
       }
     } catch (err: any) {
-      console.error('Error creating mapping:', err);
-      // Detailed error logging
-      if (err.response) {
-        console.error('Server error:', err.response.status, err.response.data);
-        setError(err.response?.data?.message || `Server error: ${err.response.status}`);
-      } else if (err.request) {
-        console.error('No response from server:', err.request);
-        setError('No response received from server. Please try again.');
-      } else {
-        console.error('Request setup error:', err.message);
-        setError(`Error sending request: ${err.message}`);
-      }
+      // Handle outer try-catch errors
+      console.error('Unexpected error in form submission:', err);
+      setError(`An unexpected error occurred: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -764,23 +916,26 @@ const FacultySubjectMappingForm = ({
   }, [formData.departmentId, formData.showAllFaculty, faculties, allFaculties]);
 
   return (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom>
-        Create Faculty-Subject Mapping
+    <Paper elevation={2} sx={{ p: 3, width: '100%' }}>
+      {/* Title Section */}
+      <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+        Faculty-Subject Mapping
       </Typography>
-      
+
+      {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>
-      )}
-      {loading && (
-        <Box display="flex" justifyContent="center" sx={{ my: 3 }}>
-          <CircularProgress />
-        </Box>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
       )}
       
+      {/* Success Alert */}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      )}
+
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           {/* Department Field */}
@@ -959,7 +1114,7 @@ const FacultySubjectMappingForm = ({
                 </Box>
               </Grid>
 
-              {/* Batch Field */}
+              {/* Batch Field - Editable even when subject is selected */}
               <Grid item xs={12}>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body1" sx={{ mb: 1 }}>
@@ -987,100 +1142,122 @@ const FacultySubjectMappingForm = ({
                         </MenuItem>
                       ))}
                     </Select>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', pl: 1 }}>
+                      {formData.subjectId ? "Auto-suggested from subject, but you can change it" : "Select a batch for this mapping"}
+                    </Typography>
                   </FormControl>
                 </Box>
               </Grid>
 
-              {/* Section Field */}
+              {/* Section Field - Read-only when subject is selected */}
               <Grid item xs={12}>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body1" sx={{ mb: 1 }}>
                     Section
                   </Typography>
-                  <FormControl fullWidth>
-                    <Select
-                      value={formData.section || ""}
-                      onChange={(e: SelectChangeEvent) => handleChange('section', e.target.value as string)}
-                      displayEmpty
-                      sx={{ height: '48px' }}
-                      disabled={loading}
-                      MenuProps={{
-                        PaperProps: {
-                          style: {
-                            maxHeight: 300
-                          },
-                        },
-                      }}
-                    >
-                      <MenuItem value=""><em>Select Section</em></MenuItem>
-                      {availableSections.length > 0 ? (
-                        // Show available sections if fetched
-                        availableSections.map((section) => (
-                          <MenuItem key={section} value={section}>
-                            {section}
-                          </MenuItem>
-                        ))
-                      ) : (
-                        // If no sections available, show manual input option
-                        <MenuItem value="ALL">ALL</MenuItem>
-                      )}
-                    </Select>
-                  </FormControl>
+                  <TextField
+                    fullWidth
+                    value={formData.section || ""}
+                    placeholder={"Auto-filled from subject's section"}
+                    disabled={loading}
+                    InputProps={{
+                      readOnly: !!formData.subjectId,
+                    }}
+                    sx={{
+                      '& .MuiInputBase-input.Mui-disabled': {
+                        WebkitTextFillColor: '#000000',
+                        opacity: 0.8,
+                      },
+                      '& .MuiInputBase-input.Mui-readOnly': {
+                        bgcolor: '#f5f5f5',
+                      }
+                    }}
+                    helperText={formData.subjectId ? 
+                      "This field is auto-filled from subject's section data" : 
+                      "Section will be auto-filled when a subject is selected"}
+                  />
                 </Box>
               </Grid>
 
-              {/* Semester Field */}
+              {/* Semester Field - Read-only when subject is selected */}
               <Grid item xs={12}>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body1" sx={{ mb: 1 }}>
                     Semester *
                   </Typography>
-                  <FormControl fullWidth required>
-                    <Select
-                      value={formData.departmentId || ""}
-                      onChange={(e: SelectChangeEvent) => {
-                        const selectedId = e.target.value;
-                        console.log("Department selected:", selectedId);
-                        const dept = departments.find((d) => d.id.toString() === selectedId);
-                        console.log("Selected Dept Object:", dept);
-                        handleDepartmentChange(selectedId);
+                  {formData.subjectId ? (
+                    <TextField
+                      fullWidth
+                      required
+                      value={formData.semester || ""}
+                      placeholder="Auto-filled from subject"
+                      disabled={loading}
+                      InputProps={{
+                        readOnly: true,
                       }}
-                      sx={{ height: '48px' }}
-                      disabled={!!formData.subjectId || loading}
-                    >
-                      <MenuItem value=""><em>Select Semester</em></MenuItem>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                        <MenuItem key={sem} value={sem.toString()}>
-                          {sem}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                      sx={{
+                        '& .MuiInputBase-input.Mui-disabled': {
+                          WebkitTextFillColor: '#000000',
+                          opacity: 0.8,
+                        },
+                        '& .MuiInputBase-input.Mui-readOnly': {
+                          bgcolor: '#f5f5f5',
+                        }
+                      }}
+                      helperText="This field is auto-filled from subject's data"
+                    />
+                  ) : (
+                    <FormControl fullWidth required>
+                      <Select
+                        value={formData.semester || ""}
+                        onChange={(e: SelectChangeEvent) => handleChange('semester', e.target.value as string)}
+                        displayEmpty
+                        sx={{ height: '48px' }}
+                        disabled={loading}
+                      >
+                        <MenuItem value=""><em>Select Semester</em></MenuItem>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                          <MenuItem key={sem} value={sem.toString()}>
+                            {sem}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', pl: 1 }}>
+                        Select a semester
+                      </Typography>
+                    </FormControl>
+                  )}
                 </Box>
               </Grid>
 
-              {/* Academic Year Field */}
+              {/* Academic Year Field - Read-only when subject is selected */}
               <Grid item xs={12}>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body1" sx={{ mb: 1 }}>
                     Academic Year *
                   </Typography>
-                  <FormControl fullWidth required>
-                    <Select
-                      value={formData.academicYear}
-                      onChange={(e: SelectChangeEvent) => handleChange('academicYear', e.target.value as string)}
-                      displayEmpty
-                      sx={{ height: '48px' }}
-                      disabled={loading}
-                    >
-                      <MenuItem value=""><em>Select Academic Year</em></MenuItem>
-                      {Array.isArray(academicYearOptions) && academicYearOptions.map((year) => (
-                        <MenuItem key={year} value={year}>
-                          {year}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <TextField
+                    fullWidth
+                    required
+                    value={formData.academicYear}
+                    placeholder="Auto-filled from subject"
+                    disabled={loading}
+                    InputProps={{
+                      readOnly: !!formData.subjectId,
+                    }}
+                    sx={{
+                      '& .MuiInputBase-input.Mui-disabled': {
+                        WebkitTextFillColor: '#000000',
+                        opacity: 0.8,
+                      },
+                      '& .MuiInputBase-input.Mui-readOnly': {
+                        bgcolor: '#f5f5f5',
+                      }
+                    }}
+                    helperText={formData.subjectId ? 
+                      "This field is auto-filled from subject data" : 
+                      "Academic year will be auto-filled when a subject is selected"}
+                  />
                 </Box>
               </Grid>
 
