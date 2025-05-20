@@ -88,7 +88,7 @@ const getSuperAdminDashboard = async () => {
     prisma.subject.count(),
     
     // Recent attendance sessions
-    prisma.attendanceSession.findMany({
+    prisma.attendancesession.findMany({
       take: 5,
       orderBy: { attendanceDate: 'desc' },
       include: {
@@ -115,7 +115,7 @@ const getSuperAdminDashboard = async () => {
         },
         user: {
           include: {
-            facultyAccount: true
+            faculty: true
           }
         }
       },
@@ -180,7 +180,7 @@ const getSuperAdminDashboard = async () => {
         code: mark.examcomponent.subject.code
       },
       faculty: {
-        name: mark.user?.facultyAccount?.name || 'N/A'
+        name: mark.user?.faculty?.name || 'N/A'
       },
       averageMarks: 0 // This would ideally be calculated
     };
@@ -205,7 +205,7 @@ const getFacultyDashboard = async (facultyId: number) => {
   // Run queries in parallel for better performance
   const [
     subjectsCount,
-    attendanceSessionsCount,
+    attendancesessionsCount,
     recentAttendance,
     recentMarks,
     lowAttendance,
@@ -227,7 +227,7 @@ const getFacultyDashboard = async (facultyId: number) => {
     }),
     
     // Recent attendance sessions by faculty
-    prisma.attendanceSession.findMany({
+    prisma.attendancesession.findMany({
       where: {
         facultyId: String(facultyId)
       },
@@ -338,7 +338,7 @@ const getFacultyDashboard = async (facultyId: number) => {
 
   return {
     subjects: subjectsCount,
-    attendanceSessions: attendanceSessionsCount,
+    attendancesessions: attendancesessionsCount,
     recentAttendance: formattedAttendance,
     recentMarks: formattedMarks,
     lowAttendance,
@@ -393,26 +393,23 @@ const getDepartmentAdminDashboard = async (userId: number) => {
       }
     }),
     
-    // Recent attendance sessions in department
-    prisma.attendanceSession.findMany({
-      where: {
-        subject: {
-          departmentId
-        }
-      },
-      take: 5,
-      orderBy: { attendanceDate: 'desc' },
-      include: {
-        subject: true,
-        faculty: true,
-        _count: {
-          select: { attendanceentry: true }
-        },
-        attendanceentry: {
-          select: { status: true }
-        }
-      }
-    }),
+    // Recent attendance sessions in department - use direct SQL query
+    prisma.$queryRaw`
+      SELECT 
+        a.id, 
+        a.attendanceDate as attendanceDate, 
+        s.code as subject_code, 
+        s.name as subject_name,
+        f.name as faculty_name,
+        (SELECT COUNT(*) FROM attendanceentry WHERE sessionId = a.id) as total_entries,
+        (SELECT COUNT(*) FROM attendanceentry WHERE sessionId = a.id AND status = 'Present') as present_entries
+      FROM attendancesession a
+      JOIN subject s ON a.subjectId = s.id
+      LEFT JOIN faculty f ON a.facultyId = f.id
+      WHERE s.departmentId = ${departmentId}
+      ORDER BY a.attendanceDate DESC
+      LIMIT 5
+    `,
     
     // Recent marks entries in department
     prisma.studentcomponentmark.findMany({
@@ -433,7 +430,7 @@ const getDepartmentAdminDashboard = async (userId: number) => {
         },
         user: {
           include: {
-            facultyAccount: true
+            faculty: true
           }
         }
       },
@@ -468,25 +465,22 @@ const getDepartmentAdminDashboard = async (userId: number) => {
     })
   ]);
 
-  // Process the attendance data
-  const formattedAttendance = recentAttendance.map((session: any) => {
-    const total = session._count.attendanceentry;
-    const present = session.attendanceentry.filter((entry: any) => entry.status === 'Present').length;
-    
+  // Process the attendance data from raw SQL query results
+  const formattedAttendance = Array.isArray(recentAttendance) ? recentAttendance.map((session: any) => {
     return {
       id: session.id,
       date: session.attendanceDate,
       faculty: { 
-        name: session.faculty ? `${session.faculty.name || ''}` : 'N/A' 
+        name: session.faculty_name || 'N/A'
       },
       subject: { 
-        code: session.subject.code,
-        name: session.subject.name
+        code: session.subject_code || '',
+        name: session.subject_name || ''
       },
-      total,
-      present
+      total: Number(session.total_entries || 0),
+      present: Number(session.present_entries || 0)
     };
-  });
+  }) : [];
 
   // Process the marks data
   const formattedMarks = recentMarks.map((mark: any) => {
@@ -502,7 +496,7 @@ const getDepartmentAdminDashboard = async (userId: number) => {
         code: mark.examcomponent.subject.code
       },
       faculty: {
-        name: mark.user?.facultyAccount?.name || 'N/A'
+        name: mark.user?.faculty?.name || 'N/A'
       },
       averageMarks: 0 // This would ideally be calculated
     };

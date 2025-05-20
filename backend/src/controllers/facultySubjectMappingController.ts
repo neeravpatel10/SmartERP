@@ -39,7 +39,7 @@ export const getAllMappings = async (req: Request, res: Response) => {
       // Get faculty ID from user
       const faculty = await prisma.faculty.findFirst({
         where: {
-          id: user.facultyAccount?.id
+          id: user.faculty?.id
         }
       });
 
@@ -61,7 +61,7 @@ export const getAllMappings = async (req: Request, res: Response) => {
     // Super admin (loginType = 1) can see all mappings, no additional filters
 
     // Get mappings with filters
-    const mappings = await prisma.facultySubjectMapping.findMany({
+    const mappings = await prisma.facultysubjectmapping.findMany({
       where: filters,
       include: {
         faculty: {
@@ -139,7 +139,7 @@ export const getMappingById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { user } = req as any;
 
-    const mapping = await prisma.facultySubjectMapping.findUnique({
+    const mapping = await prisma.facultysubjectmapping.findUnique({
       where: { id: parseInt(id) },
       include: {
         faculty: {
@@ -189,7 +189,7 @@ export const getMappingById = async (req: Request, res: Response) => {
     if (user.loginType === 2) { // Faculty
       const faculty = await prisma.faculty.findFirst({
         where: {
-          id: user.facultyAccount?.id
+          id: user.faculty?.id
         }
       });
 
@@ -310,7 +310,7 @@ export const createMapping = async (req: Request, res: Response) => {
     }
 
     // Check if a similar mapping already exists and is active
-    const existingMapping = await prisma.facultySubjectMapping.findFirst({
+    const existingMapping = await prisma.facultysubjectmapping.findFirst({
       where: {
         facultyId,
         subjectId: parseInt(subjectId),
@@ -329,7 +329,7 @@ export const createMapping = async (req: Request, res: Response) => {
     }
 
     // Create new mapping
-    const newMapping = await prisma.facultySubjectMapping.create({
+    const newMapping = await prisma.facultysubjectmapping.create({
       data: {
         facultyId,
         subjectId: parseInt(subjectId),
@@ -408,7 +408,7 @@ export const updateMappingStatus = async (req: Request, res: Response) => {
     }
 
     // Check if mapping exists
-    const mapping = await prisma.facultySubjectMapping.findUnique({
+    const mapping = await prisma.facultysubjectmapping.findUnique({
       where: { id: parseInt(id) },
       include: {
         subject: {
@@ -460,7 +460,7 @@ export const updateMappingStatus = async (req: Request, res: Response) => {
     }
 
     // Update mapping status
-    const updatedMapping = await prisma.facultySubjectMapping.update({
+    const updatedMapping = await prisma.facultysubjectmapping.update({
       where: { id: parseInt(id) },
       data: {
         active: Boolean(active)
@@ -512,7 +512,7 @@ export const getStudentsForMapping = async (req: Request, res: Response) => {
     const { user } = req as any;
 
     // Find the mapping
-    const mapping = await prisma.facultySubjectMapping.findUnique({
+    const mapping = await prisma.facultysubjectmapping.findUnique({
       where: { id: parseInt(id) },
       include: {
         subject: {
@@ -538,7 +538,7 @@ export const getStudentsForMapping = async (req: Request, res: Response) => {
     if (user.loginType === 2) { // Faculty
       const faculty = await prisma.faculty.findFirst({
         where: {
-          id: user.facultyAccount?.id
+          id: user.faculty?.id
         }
       });
 
@@ -617,7 +617,7 @@ export const deleteMapping = async (req: Request, res: Response) => {
     }
 
     // Check if mapping exists
-    const mapping = await prisma.facultySubjectMapping.findUnique({
+    const mapping = await prisma.facultysubjectmapping.findUnique({
       where: { id: parseInt(id) },
       include: {
         subject: {
@@ -671,7 +671,7 @@ export const deleteMapping = async (req: Request, res: Response) => {
     }
 
     // Delete mapping
-    await prisma.facultySubjectMapping.delete({
+    await prisma.facultysubjectmapping.delete({
       where: { id: parseInt(id) }
     });
 

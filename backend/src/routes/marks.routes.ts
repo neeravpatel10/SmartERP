@@ -5,6 +5,7 @@ import {
   bulkMarksSchema, 
   validate 
 } from '../utils/validation';
+import internalMarksRoutes from '../api/marks/internal/internal.routes';
 import { 
   createExamComponent, 
   getExamComponents, 
@@ -80,5 +81,8 @@ router.post(
   bulkUploadMarks,
   logAudit
 );
+
+// Mount internal marks routes
+router.use('/internal', internalMarksRoutes);
 
 export default router; 

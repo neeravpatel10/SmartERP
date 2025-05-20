@@ -264,13 +264,6 @@ export const getBatches = async (req: Request, res: Response) => {
     const batches = await prisma.batch.findMany({
       where: whereCondition,
       include: {
-        department: {
-          select: {
-            id: true,
-            name: true,
-            code: true
-          }
-        },
         _count: {
           select: {
             students: true
@@ -284,11 +277,33 @@ export const getBatches = async (req: Request, res: Response) => {
         { name: 'asc' }
       ]
     });
+    
+    // Get department details for each batch
+    const departmentIds = [...new Set(batches.map(batch => batch.departmentId))];
+    const departments = await prisma.department.findMany({
+      where: {
+        id: { in: departmentIds }
+      },
+      select: {
+        id: true,
+        name: true,
+        code: true
+      }
+    });
+    
+    // Create a map for quick department lookup
+    const departmentMap = new Map(departments.map(dept => [dept.id, dept]));
+    
+    // Add department details to each batch
+    const batchesWithDepartments = batches.map(batch => ({
+      ...batch,
+      department: departmentMap.get(batch.departmentId) || null
+    }));
 
     res.json({
       success: true,
       data: {
-        batches,
+        batches: batchesWithDepartments,
         pagination: {
           total,
           page: pageNumber,

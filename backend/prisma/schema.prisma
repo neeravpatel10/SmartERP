@@ -8,27 +8,28 @@ datasource db {
 }
 
 model User {
-  id                   Int                    @id @default(autoincrement())
-  username             String                 @unique(map: "User_username_key")
-  email                String                 @unique(map: "User_email_key")
+  id                   Int                     @id @default(autoincrement())
+  username             String                  @unique(map: "User_username_key")
+  email                String                  @unique(map: "User_email_key")
   passwordHash         String
   loginType            Int
   departmentId         Int?
-  isActive             Boolean                @default(true)
+  isActive             Boolean                 @default(true)
   lastLogin            DateTime?
-  firstLogin           Boolean                @default(true)
-  failedLoginAttempts  Int                    @default(0)
+  firstLogin           Boolean                 @default(true)
+  failedLoginAttempts  Int                     @default(0)
   lockedUntil          DateTime?
   resetToken           String?
   resetTokenExpiry     DateTime?
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
   auditlog             auditlog[]
-  displaypic           displaypic?
-  facultyAccount       Faculty?               @relation("UserToFaculty")
-  student              Student?               @relation("UserToStudent")
+  faculty              Faculty?                @relation("UserToFaculty")
+  student              Student?                @relation("UserToStudent")
   studentcomponentmark studentcomponentmark[]
-  department           Department?            @relation(fields: [departmentId], references: [id], map: "User_departmentId_fkey")
+  department           Department?             @relation(fields: [departmentId], references: [id], map: "User_departmentId_fkey")
+  internalblueprints   internalexamblueprint[] // Relation for Internal Marks Module
+  displaypic           displaypic?
 
   @@index([departmentId], map: "User_departmentId_fkey")
   @@map("user")
@@ -38,7 +39,7 @@ model Department {
   id                                Int       @id @default(autoincrement())
   code                              String    @unique(map: "Department_code_key")
   name                              String
-  hodId                             String?   @unique
+  hodId                             String?
   createdAt                         DateTime  @default(now())
   updatedAt                         DateTime  @updatedAt
   faculty_department_hodIdTofaculty Faculty?  @relation("department_hodIdTofaculty", fields: [hodId], references: [id], map: "Department_hodId_fkey")
@@ -47,14 +48,13 @@ model Department {
   students                          Student[]
   subject                           subject[]
   users                             User[]
-  batches                           batch[]
 
   @@index([hodId], map: "Department_hodId_fkey")
   @@map("department")
 }
 
 model Student {
-  usn                  String                 @id @db.VarChar(20)
+  usn                  String                    @id @db.VarChar(20)
   firstName            String
   middleName           String?
   lastName             String
@@ -67,20 +67,21 @@ model Student {
   semester             Int
   section              String
   admissionYear        Int
-  userId               Int?                   @unique(map: "Student_userId_key")
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
+  userId               Int?                      @unique(map: "Student_userId_key")
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
   attendanceentry      attendanceentry[]
   mark                 mark[]
-  batch                batch                  @relation(fields: [batchId], references: [id], map: "Student_batchId_fkey")
-  department           Department             @relation(fields: [departmentId], references: [id], map: "Student_departmentId_fkey")
-  user                 User?                  @relation("UserToStudent", fields: [userId], references: [id], map: "Student_userId_fkey")
+  batch                batch                     @relation(fields: [batchId], references: [id], map: "Student_batchId_fkey")
+  department           Department                @relation(fields: [departmentId], references: [id], map: "Student_departmentId_fkey")
+  user                 User?                     @relation("UserToStudent", fields: [userId], references: [id], map: "Student_userId_fkey")
   addresses            StudentAddress[]
   entranceExams        StudentEntranceExam[]
   guardians            StudentGuardian[]
   pucRecord            StudentPucRecord[]
   sslcRecord           StudentSslcRecord[]
   studentcomponentmark studentcomponentmark[]
+  subquestionmarks     studentsubquestionmarks[] // Relation for Internal Marks Module
 
   @@index([batchId], map: "Student_batchId_fkey")
   @@index([departmentId], map: "Student_departmentId_fkey")
@@ -187,16 +188,26 @@ model Faculty {
   email                     String                  @unique(map: "Faculty_email_key")
   phone                     String?
   designation               String?
+  gender                    String?
+  qualification             String?
   departmentId              Int?
   userId                    Int?                    @unique(map: "Faculty_userId_key")
   createdAt                 DateTime                @default(now())
   updatedAt                 DateTime                @updatedAt
+  aicteId                   String?
+  dateOfBirth               String?
+  industryExperience        String?
+  isActive                  Boolean                 @default(true)
+  permanentAddress          String?
+  prefix                    String?
+  presentAddress            String?
+  teachingExperience        String?
+  yearOfJoining             String?
+  attendancesession         attendancesession[]
+  department_hodIdTofaculty Department[]            @relation("department_hodIdTofaculty")
   department                Department?             @relation(fields: [departmentId], references: [id], map: "Faculty_departmentId_fkey")
-  department_hodIdTofaculty Department?             @relation("department_hodIdTofaculty")
   user                      User?                   @relation("UserToFaculty", fields: [userId], references: [id], map: "Faculty_userId_fkey")
-  facultySubjectMappings    FacultySubjectMapping[]
-  studentcomponentmark      studentcomponentmark[]
-  attendanceSessions        AttendanceSession[]     @relation("FacultyToAttendanceSession")
+  facultysubjectmapping     facultysubjectmapping[]
   coordinatedSections       section[]               @relation("FacultyToSection")
 
   @@index([departmentId], map: "Faculty_departmentId_fkey")
@@ -225,31 +236,11 @@ model attendanceentry {
   status            String
   createdAt         DateTime          @default(now())
   updatedAt         DateTime
-  attendancesession AttendanceSession @relation(fields: [sessionId], references: [id], map: "AttendanceEntry_sessionId_fkey")
+  attendancesession attendancesession @relation(fields: [sessionId], references: [id], map: "AttendanceEntry_sessionId_fkey")
   student           Student           @relation(fields: [usn], references: [usn], onDelete: Cascade, map: "AttendanceEntry_usn_fkey")
 
   @@unique([sessionId, usn], map: "AttendanceEntry_sessionId_usn_key")
   @@index([usn], map: "AttendanceEntry_usn_fkey")
-}
-
-model AttendanceSession {
-  id              Int               @id @default(autoincrement())
-  subjectId       Int
-  facultyId       String?
-  attendanceDate  DateTime
-  sessionSlot     Int
-  duration        Int               @default(1)
-  batchId         String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  attendanceentry attendanceentry[]
-  batch           batch?            @relation(fields: [batchId], references: [id], map: "AttendanceSession_batchId_fkey")
-  faculty         Faculty?          @relation("FacultyToAttendanceSession", fields: [facultyId], references: [id], map: "AttendanceSession_facultyId_fkey")
-  subject         subject           @relation(fields: [subjectId], references: [id], map: "AttendanceSession_subjectId_fkey")
-
-  @@unique([subjectId, attendanceDate, sessionSlot], map: "AttendanceSession_subjectId_attendanceDate_sessionSlot_key")
-  @@index([batchId], map: "AttendanceSession_batchId_fkey")
-  @@index([facultyId], map: "AttendanceSession_facultyId_fkey")
 }
 
 model auditlog {
@@ -269,22 +260,22 @@ model auditlog {
 }
 
 model batch {
-  id                 String                  @id
-  name               String
-  academicYear       String
-  departmentId       Int
-  currentSemester    Int                     @default(1)
-  autoRollover       Boolean                 @default(false)
-  archived           Boolean                 @default(false)
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  department         Department              @relation(fields: [departmentId], references: [id])
-  students           Student[]
-  facultyMappings    FacultySubjectMapping[]
-  attendanceSessions AttendanceSession[]
-  sections           section[]
+  id                    String                  @id
+  name                  String
+  academicYear          String
+  departmentId          Int
+  currentSemester       Int                     @default(1)
+  autoRollover          Boolean                 @default(false)
+  archived              Boolean                 @default(false)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  attendancesession     attendancesession[]
+  facultysubjectmapping facultysubjectmapping[]
+  sections              section[]
+  students              Student[]
 
-  @@unique([name, academicYear, departmentId])
+  @@unique([name, academicYear, departmentId], map: "Batch_name_academicYear_departmentId_key")
+  @@index([departmentId], map: "Batch_departmentId_fkey")
 }
 
 model displaypic {
@@ -313,27 +304,6 @@ model examcomponent {
   studentcomponentmark studentcomponentmark[]
 
   @@unique([subjectId, name], map: "ExamComponent_subjectId_name_key")
-}
-
-model FacultySubjectMapping {
-  id           Int                          @id @default(autoincrement())
-  facultyId    String
-  subjectId    Int
-  section      String?
-  semester     Int
-  batchId      String
-  academicYear String
-  status       facultysubjectmapping_status @default(pending)
-  createdAt    DateTime                     @default(now())
-  updatedAt    DateTime                     @updatedAt
-  batch        batch                        @relation(fields: [batchId], references: [id], map: "FacultySubjectMapping_batchId_fkey")
-  faculty      Faculty                      @relation(fields: [facultyId], references: [id], map: "FacultySubjectMapping_facultyId_fkey")
-  subject      subject                      @relation(fields: [subjectId], references: [id], map: "FacultySubjectMapping_subjectId_fkey")
-
-  @@unique([facultyId, subjectId, section, academicYear], map: "FacultySubjectMapping_facultyId_subjectId_section_academicYe_key")
-  @@index([batchId], map: "FacultySubjectMapping_batchId_fkey")
-  @@index([facultyId], map: "FacultySubjectMapping_facultyId_fkey")
-  @@index([subjectId], map: "FacultySubjectMapping_subjectId_fkey")
 }
 
 model iaquestionconfig {
@@ -371,18 +341,18 @@ model mark {
 
 model section {
   id                   Int        @id @default(autoincrement())
-  name                 String     @db.VarChar(10)
+  name                 String?    @db.VarChar(10)
   batchId              String
   departmentId         Int
+  currentSemester      Int
   coordinatorFacultyId String?
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  createdAt            DateTime?  @default(now()) @db.DateTime(0)
+  updatedAt            DateTime?  @default(now()) @updatedAt @db.DateTime(0)
   batch                batch      @relation(fields: [batchId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "FK_Section_Batch")
   faculty              Faculty?   @relation("FacultyToSection", fields: [coordinatorFacultyId], references: [id], onUpdate: Restrict, map: "FK_Section_Coordinator")
   department           Department @relation(fields: [departmentId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "FK_Section_Department")
   subjects             subject[]
 
-  @@unique([name, batchId, departmentId], map: "Section_name_batch_dept_key")
   @@index([batchId], map: "FK_Section_Batch")
   @@index([coordinatorFacultyId], map: "FK_Section_Coordinator")
   @@index([departmentId], map: "FK_Section_Department")
@@ -418,19 +388,16 @@ model studentcomponentmark {
   usn           String
   componentId   Int
   marksObtained Float
-  facultyId     String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime
   recordedBy    Int?
   examcomponent examcomponent @relation(fields: [componentId], references: [id], map: "StudentComponentMark_componentId_fkey")
   user          User?         @relation(fields: [recordedBy], references: [id], map: "StudentComponentMark_recordedBy_fkey")
   student       Student       @relation(fields: [usn], references: [usn], onDelete: Cascade, map: "StudentComponentMark_usn_fkey")
-  faculty       Faculty?      @relation(fields: [facultyId], references: [id], map: "studentcomponentmark_facultyId_fkey")
 
   @@unique([usn, componentId], map: "StudentComponentMark_usn_componentId_key")
   @@index([componentId], map: "StudentComponentMark_componentId_fkey")
   @@index([recordedBy], map: "StudentComponentMark_recordedBy_fkey")
-  @@index([facultyId], map: "studentcomponentmark_facultyId_idx")
 }
 
 model subject {
@@ -446,20 +413,20 @@ model subject {
   lockedAt              DateTime?
   archivedAt            DateTime?
   schemeYear            Int?
-  section               String?                 @db.VarChar(10)
-  sectionId             Int?
   createdAt             DateTime                @default(now())
   updatedAt             DateTime
-  attendancesession     AttendanceSession[]
+  section               String?                 @db.VarChar(10)
+  sectionId             Int?
+  attendancesession     attendancesession[]
   examcomponent         examcomponent[]
-  facultysubjectmapping FacultySubjectMapping[]
+  facultysubjectmapping facultysubjectmapping[]
   mark                  mark[]
   subjectcategory       subjectcategory?        @relation(fields: [categoryId], references: [id], map: "Subject_categoryId_fkey")
   department            Department              @relation(fields: [departmentId], references: [id], map: "Subject_departmentId_fkey")
   sectionRelation       section?                @relation(fields: [sectionId], references: [id], map: "Subject_sectionId_fkey")
   subjectstatuslog      subjectstatuslog[]
+  internalblueprints    internalexamblueprint[] // Relation for Internal Marks Module
 
-  @@unique([code, departmentId, semester, schemeYear, sectionId], map: "Subject_code_dept_sem_scheme_section_key")
   @@index([categoryId], map: "Subject_categoryId_fkey")
   @@index([departmentId], map: "Subject_departmentId_fkey")
   @@index([sectionId], map: "Subject_sectionId_fkey")
@@ -508,6 +475,56 @@ model temp_section_assignments {
   @@ignore
 }
 
+model attendancesession {
+  id              Int               @id @default(autoincrement())
+  subjectId       Int
+  facultyId       String?
+  attendanceDate  DateTime
+  sessionSlot     Int
+  duration        Int               @default(1)
+  academicYear    String
+  semester        Int
+  section         String?
+  batchId         String?
+  markedAt        DateTime          @default(now())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  attendanceentry attendanceentry[]
+  batch           batch?            @relation(fields: [batchId], references: [id], map: "AttendanceSession_batchId_fkey")
+  faculty         Faculty?          @relation(fields: [facultyId], references: [id], map: "AttendanceSession_facultyId_fkey")
+  subject         subject           @relation(fields: [subjectId], references: [id], map: "AttendanceSession_subjectId_fkey")
+
+  @@unique([subjectId, attendanceDate, sessionSlot], map: "AttendanceSession_subjectId_attendanceDate_sessionSlot_key")
+  @@index([batchId], map: "AttendanceSession_batchId_fkey")
+  @@index([facultyId], map: "AttendanceSession_facultyId_fkey")
+}
+
+model facultysubjectmapping {
+  id              Int                          @id @default(autoincrement())
+  facultyId       String
+  subjectId       Int
+  section         String?
+  semester        Int
+  batchId         String
+  academicYear    String
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime
+  active          Boolean                      @default(true)
+  componentScope  String                       @default("theory")
+  isPrimary       Boolean                      @default(true)
+  approvedAt      DateTime?
+  approvedBy      Int?
+  rejectionReason String?
+  status          facultysubjectmapping_status @default(pending)
+  batch           batch                        @relation(fields: [batchId], references: [id], map: "FacultySubjectMapping_batchId_fkey")
+  faculty         Faculty                      @relation(fields: [facultyId], references: [id], map: "FacultySubjectMapping_facultyId_fkey")
+  subject         subject                      @relation(fields: [subjectId], references: [id], map: "FacultySubjectMapping_subjectId_fkey")
+
+  @@unique([facultyId, subjectId, section, academicYear], map: "FacultySubjectMapping_facultyId_subjectId_section_academicYe_key")
+  @@index([batchId], map: "FacultySubjectMapping_batchId_fkey")
+  @@index([subjectId], map: "FacultySubjectMapping_subjectId_fkey")
+}
+
 enum GuardianType {
   father
   mother
@@ -537,4 +554,45 @@ enum facultysubjectmapping_status {
   pending
   approved
   rejected
+}
+
+// Internal Marks Module Models
+model internalexamblueprint {
+  id        Int                   @id @default(autoincrement())
+  subjectId Int
+  cieNo     Int
+  createdBy Int
+  createdAt DateTime              @default(now())
+  subject   subject               @relation(fields: [subjectId], references: [id])
+  creator   User                  @relation(fields: [createdBy], references: [id])
+  subqs     internalsubquestion[]
+
+  @@unique([subjectId, cieNo])
+  @@index([subjectId])
+  @@map("internal_exam_blueprint")
+}
+
+model internalsubquestion {
+  id          Int                       @id @default(autoincrement())
+  blueprintId Int
+  questionNo  Int
+  label       String
+  maxMarks    Decimal                   @db.Decimal(5, 2)
+  blueprint   internalexamblueprint     @relation(fields: [blueprintId], references: [id])
+  marks       studentsubquestionmarks[]
+
+  @@index([blueprintId])
+  @@map("internal_subquestion")
+}
+
+model studentsubquestionmarks {
+  subqId      Int
+  studentUsn  String              @db.VarChar(20)
+  marks       Decimal             @db.Decimal(5, 2)
+  updatedAt   DateTime            @default(now()) @updatedAt
+  subquestion internalsubquestion @relation(fields: [subqId], references: [id])
+  student     Student             @relation(fields: [studentUsn], references: [usn])
+
+  @@id([subqId, studentUsn])
+  @@map("student_subquestion_marks")
 }

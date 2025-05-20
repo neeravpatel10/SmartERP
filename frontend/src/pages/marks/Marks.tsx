@@ -20,6 +20,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import EditIcon from '@mui/icons-material/Edit';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 interface Subject {
   id: number;
@@ -174,6 +175,36 @@ const Marks: React.FC = () => {
             </Card>
           </Grid>
           
+          {/* Internal Marks Card - For Faculty and Admins */}
+          {isFaculty && (
+            <Grid item xs={12} sm={6} md={4}>
+              <Card variant="outlined" sx={{ border: '2px solid #e3f2fd' }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <AssignmentIcon color="primary" sx={{ mr: 1 }} />
+                    <Typography variant="h6">Internal Marks</Typography>
+                    <Box sx={{ ml: 'auto', backgroundColor: '#bbdefb', px: 1, py: 0.2, borderRadius: 1 }}>
+                      <Typography variant="caption" fontWeight="bold">New</Typography>
+                    </Box>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Create blueprints and enter CIE/IA marks with the best-scoring question calculation.
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button 
+                    onClick={() => navigate('/marks/internal')}
+                    variant="contained" 
+                    color="primary"
+                    fullWidth
+                  >
+                    Internal Marks
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          )}
+          
           {/* Additional cards for Admins */}
           {isAdmin && (
             <Grid item xs={12} sm={6} md={4}>
@@ -247,6 +278,13 @@ const Marks: React.FC = () => {
                         onClick={() => navigate(`/marks/entry?subject=${subject.id}`)}
                       >
                         Enter Marks
+                      </Button>
+                      <Button 
+                        size="small" 
+                        color="secondary"
+                        onClick={() => navigate(`/marks/internal?subjectId=${subject.id}`)}
+                      >
+                        Internal
                       </Button>
                     </CardActions>
                   </Card>

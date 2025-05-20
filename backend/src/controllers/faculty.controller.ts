@@ -98,7 +98,7 @@ export const createFaculty = async (req: Request, res: Response) => {
         departmentId,
         isActive: true,
         firstLogin: true,
-        facultyAccount: {
+        faculty: {
           connect: {
             id: faculty.id
           }
@@ -382,7 +382,7 @@ export const getFacultyById = async (req: Request, res: Response) => {
             loginType: true
           }
         },
-        subjectMappings: {
+        facultysubjectmapping: {
           include: {
             subject: true,
             batch: true
@@ -404,6 +404,58 @@ export const getFacultyById = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get faculty by ID error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+// Handler for /faculty/subject-mappings route
+export const getFacultySubjectMappings = async (req: Request, res: Response) => {
+  try {
+    // Get faculty ID from authenticated user
+    const facultyId = req.user?.facultyId;
+    
+    if (!facultyId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to access faculty subject mappings'
+      });
+    }
+    
+    // Get active parameter
+    const isActive = req.query.active === 'true';
+    
+    // Get faculty with their subject mappings
+    const facultyWithMappings = await prisma.faculty.findUnique({
+      where: { 
+        id: facultyId,
+      },
+      include: {
+        facultysubjectmapping: {
+          where: isActive ? { isActive: true } : {},
+          include: {
+            subject: true,
+            batch: true
+          }
+        }
+      }
+    });
+    
+    if (!facultyWithMappings) {
+      return res.status(404).json({
+        success: false,
+        message: 'Faculty not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: facultyWithMappings.facultysubjectmapping
+    });
+  } catch (error) {
+    console.error('Get faculty subject mappings error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -591,7 +643,7 @@ export const bulkUploadFaculty = async (req: Request, res: Response) => {
             departmentId: department.id,
             isActive: true,
             firstLogin: true,
-            facultyAccount: {
+            faculty: {
               connect: {
                 id: createdFaculty.id
               }
