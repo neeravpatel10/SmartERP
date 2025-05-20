@@ -177,4 +177,4 @@ Defaults live in `subject_categories`; blueprint UI shows “Max per CIE: XX�
 
 ---
 
-© 2025 AIET ERP Team – internal design document. Do not distribute without permission.
+© 2025 AIET ERP Team – internal design document. Do not distribute without permission.
