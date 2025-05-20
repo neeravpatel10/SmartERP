@@ -14,8 +14,7 @@ interface AttendanceSession {
   facultyId?: number;
   faculty?: {
     id: number;
-    firstName: string;
-    lastName: string;
+    name: string;
   };
   attendanceDate: string;
   sessionSlot: number;

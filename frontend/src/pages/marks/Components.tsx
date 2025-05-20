@@ -1,5 +1,6 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Container,
   Typography,
@@ -101,10 +102,11 @@ const Components: React.FC = () => {
       
       try {
         const [mappingsRes, componentsRes] = await Promise.all([
-          api.get('/subjects/faculty-mapping', {
-            headers: { Authorization: `Bearer ${token}` }
+          axios.get('http://localhost:3000/api/faculty-subject-mapping', {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { active: 'all' }
           }),
-          api.get('/marks/exam-components', {
+          axios.get('http://localhost:3000/api/marks/exam-components', {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
@@ -118,9 +120,13 @@ const Components: React.FC = () => {
           setSubjects(uniqueSubjects);
         }
         
-        if (componentsRes.data.success) {
+        if (componentsRes.data.success && Array.isArray(componentsRes.data.data)) {
           setComponents(componentsRes.data.data);
           setFilteredComponents(componentsRes.data.data);
+        } else {
+          // Initialize with empty arrays if data is not in expected format
+          setComponents([]);
+          setFilteredComponents([]);
         }
       } catch (err) {
         console.error('Error fetching data:', err);

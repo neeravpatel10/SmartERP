@@ -42,9 +42,18 @@ const Marks: React.FC = () => {
       setError(null);
       
       try {
-        const response = await axios.get('/subjects/faculty-mapping', {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { active: true }
+        // CRITICAL FIX: Use a completely different endpoint to avoid the 400 error
+        // Instead of /subjects/faculty-mapping which has validation issues,
+        // directly use /faculty-subject-mapping which is more reliable
+        // Use the same approach as in FacultySubjectMappingTable (direct axios call)
+        const apiUrl = 'http://localhost:3000/api/faculty-subject-mapping';
+        const token = localStorage.getItem('token');
+        
+        const response = await axios.get(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
         
         if (response.data.success) {
@@ -67,7 +76,7 @@ const Marks: React.FC = () => {
   }, [token]);
 
   // Check if user is faculty
-  const isFaculty = user?.loginType === 2;
+  const isFaculty = user?.loginType === 2 || user?.loginType === 3;
   // Check if user is department admin or super admin
   const isAdmin = user?.loginType === 1 || user?.loginType === 3;
 

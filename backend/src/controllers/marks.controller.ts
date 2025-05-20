@@ -23,7 +23,7 @@ export const createExamComponent = async (req: Request, res: Response) => {
     }
 
     // Check if component already exists for this subject
-    const existingComponent = await prisma.examComponent.findFirst({
+    const existingComponent = await prisma.examcomponent.findFirst({
       where: {
         subjectId,
         name
@@ -38,7 +38,7 @@ export const createExamComponent = async (req: Request, res: Response) => {
     }
 
     // Create exam component
-    const examComponent = await prisma.examComponent.create({
+    const examComponent = await prisma.examcomponent.create({
       data: {
         subjectId,
         name,
@@ -93,12 +93,12 @@ export const getExamComponents = async (req: Request, res: Response) => {
     }
 
     // Get total count for pagination
-    const total = await prisma.examComponent.count({
+    const total = await prisma.examcomponent.count({
       where: filterConditions
     });
 
     // Get exam components with pagination and filters
-    const examComponents = await prisma.examComponent.findMany({
+    const examComponents = await prisma.examcomponent.findMany({
       where: filterConditions,
       include: {
         subject: {
@@ -116,11 +116,7 @@ export const getExamComponents = async (req: Request, res: Response) => {
             }
           }
         },
-        _count: {
-          select: {
-            studentMarks: true
-          }
-        }
+        studentcomponentmark: true
       },
       skip: (pageNumber - 1) * limitNumber,
       take: limitNumber,
@@ -158,7 +154,7 @@ export const getExamComponentById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const examComponent = await prisma.examComponent.findUnique({
+    const examComponent = await prisma.examcomponent.findUnique({
       where: { id: parseInt(id) },
       include: {
         subject: {
@@ -226,7 +222,7 @@ export const addStudentComponentMark = async (req: Request, res: Response) => {
     const { usn, componentId, marksObtained } = req.body;
 
     // Validate component exists
-    const component = await prisma.examComponent.findUnique({
+    const component = await prisma.examcomponent.findUnique({
       where: { id: componentId }
     });
 
@@ -314,7 +310,7 @@ export const bulkUploadMarks = async (req: Request, res: Response) => {
     const { componentId, marks } = req.body;
 
     // Validate component exists
-    const component = await prisma.examComponent.findUnique({
+    const component = await prisma.examcomponent.findUnique({
       where: { id: componentId }
     });
 
@@ -594,7 +590,7 @@ export const getComponentMarks = async (req: Request, res: Response) => {
     }
 
     // Check if component exists (optional, but good practice)
-    const component = await prisma.examComponent.findUnique({
+    const component = await prisma.examcomponent.findUnique({
       where: { id: componentIdNum }
     });
 
@@ -654,7 +650,7 @@ export const downloadMarksTemplate = async (req: Request, res: Response) => {
     }
 
     // Get component details to determine structure
-    const component = await prisma.examComponent.findUnique({
+    const component = await prisma.examcomponent.findUnique({
       where: { id: componentIdNum },
       include: {
         subject: {

@@ -609,6 +609,133 @@ const Dashboard: React.FC = () => {
           </Grid>
         </Grid>
       );
+    } else if (user?.loginType === 3) {  // Department Admin
+      return (
+        <Grid container spacing={3}>
+          {/* Department Admin Overview Card */}
+          <Grid item xs={12} md={8}>
+            <Card>
+              <CardHeader title="Department Overview" />
+              <CardContent>
+                <Grid container spacing={3}>
+                  <Grid item xs={6} sm={3}>
+                    <Box textAlign="center" p={2}>
+                      <PeopleIcon color="primary" style={{ fontSize: 40 }} />
+                      <Typography variant="h4">{stats.students}</Typography>
+                      <Typography variant="body2" color="textSecondary">Students</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box textAlign="center" p={2}>
+                      <PeopleIcon color="secondary" style={{ fontSize: 40 }} />
+                      <Typography variant="h4">{stats.faculty}</Typography>
+                      <Typography variant="body2" color="textSecondary">Faculty</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box textAlign="center" p={2}>
+                      <ClassIcon color="action" style={{ fontSize: 40 }} />
+                      <Typography variant="h4">{stats.subjects}</Typography>
+                      <Typography variant="body2" color="textSecondary">Subjects</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box textAlign="center" p={2}>
+                      <EventIcon color="error" style={{ fontSize: 40 }} />
+                      <Typography variant="h4">{stats.attendanceSessions || 0}</Typography>
+                      <Typography variant="body2" color="textSecondary">Sessions</Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          {/* Department Actions Card */}
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardHeader title="Quick Actions" />
+              <CardContent>
+                <List>
+                  <ListItem button component={RouterLink} to="/subjects">
+                    <ListItemText primary="Manage Subjects" />
+                  </ListItem>
+                  <Divider />
+                  <ListItem button component={RouterLink} to="/attendance">
+                    <ListItemText primary="Attendance Reports" />
+                  </ListItem>
+                  <Divider />
+                  <ListItem button component={RouterLink} to="/faculty">
+                    <ListItemText primary="Faculty Management" />
+                  </ListItem>
+                  <Divider />
+                  <ListItem button component={RouterLink} to="/marks">
+                    <ListItemText primary="Evaluation & Marks" />
+                  </ListItem>
+                </List>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          {/* Recent Activity Card */}
+          <Grid item xs={12}>
+            <Card>
+              <CardHeader title="Recent Department Activity" />
+              <CardContent>
+                <Grid container spacing={3}>
+                  {/* Recent Attendance */}
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" gutterBottom>Recent Attendance Sessions</Typography>
+                    {stats.recentAttendance && stats.recentAttendance.length > 0 ? (
+                      <List>
+                        {stats.recentAttendance.slice(0, 5).map((session: any, index: number) => (
+                          <React.Fragment key={session.id || index}>
+                            <ListItem>
+                              <ListItemText 
+                                primary={session.subject?.name || 'Unknown Subject'} 
+                                secondary={`${new Date(session.attendanceDate).toLocaleDateString()} - ${session.entries} students`} 
+                              />
+                            </ListItem>
+                            {index < Math.min(stats.recentAttendance.length, 5) - 1 && <Divider />}
+                          </React.Fragment>
+                        ))}
+                      </List>
+                    ) : (
+                      <Typography variant="body2" color="textSecondary" align="center">
+                        No recent attendance sessions
+                      </Typography>
+                    )}
+                  </Grid>
+                  
+                  {/* Recent Marks */}
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" gutterBottom>Recent Mark Entries</Typography>
+                    {stats.recentMarks && stats.recentMarks.length > 0 ? (
+                      <List>
+                        {stats.recentMarks.slice(0, 5).map((mark: any, index: number) => (
+                          <React.Fragment key={mark.id || index}>
+                            <ListItem>
+                              <ListItemText 
+                                primary={mark.subject?.name || 'Unknown Subject'} 
+                                secondary={`${mark.component?.name || 'Component'} - ${mark.entries} students`} 
+                              />
+                            </ListItem>
+                            {index < Math.min(stats.recentMarks.length, 5) - 1 && <Divider />}
+                          </React.Fragment>
+                        ))}
+                      </List>
+                    ) : (
+                      <Typography variant="body2" color="textSecondary" align="center">
+                        No recent mark entries
+                      </Typography>
+                    )}
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      );
     } else {
       return (
         <Alert severity="info">

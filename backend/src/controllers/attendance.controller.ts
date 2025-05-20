@@ -170,8 +170,7 @@ export const getAttendanceSessions = async (req: Request, res: Response) => {
         faculty: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true
+            name: true
           }
         },
         batch: {
@@ -182,7 +181,7 @@ export const getAttendanceSessions = async (req: Request, res: Response) => {
         },
         _count: {
           select: {
-            entries: true
+            attendanceentry: true
           }
         }
       },
@@ -234,8 +233,7 @@ export const getAttendanceSessionById = async (req: Request, res: Response) => {
         faculty: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true
+            name: true
           }
         },
         batch: {
@@ -388,24 +386,37 @@ export const bulkUploadAttendance = async (req: Request, res: Response) => {
     // Schema for validating entries
     const entrySchema = z.object({
       usn: z.string(),
-      status: z.enum(['Present', 'Absent', 'OD', 'Leave'])
+      status: z.enum(['Present', 'Absent', 'Late', 'Excused'])
     });
 
-    // Validate all entries
-    const validationResult = z.array(entrySchema).safeParse(entries);
-    if (!validationResult.success) {
+    // Validate each entry
+    const validatedEntries = [];
+    const errors = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const result = entrySchema.safeParse(entries[i]);
+      
+      if (result.success) {
+        validatedEntries.push(result.data);
+      } else {
+        errors.push({
+          index: i,
+          errors: result.error.format()
+        });
+      }
+    }
+
+    if (errors.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid entries format',
-        errors: validationResult.error.errors
+        message: 'Invalid entries found',
+        errors
       });
     }
 
-    // Get all student USNs
-    const usns = entries.map(entry => entry.usn);
-
-    // Verify all students exist
-    const students = await prisma.student.findMany({
+    // Check if any students don't exist
+    const usns = validatedEntries.map(entry => entry.usn);
+    const existingStudents = await prisma.student.findMany({
       where: {
         usn: {
           in: usns
@@ -416,45 +427,60 @@ export const bulkUploadAttendance = async (req: Request, res: Response) => {
       }
     });
 
-    if (students.length !== usns.length) {
-      const foundUsns = students.map(student => student.usn);
-      const missingUsns = usns.filter(usn => !foundUsns.includes(usn));
+    const existingUsns = new Set(existingStudents.map(student => student.usn));
+    const nonExistentUsns = usns.filter(usn => !existingUsns.has(usn));
 
-      return res.status(400).json({
+    if (nonExistentUsns.length > 0) {
+      return res.status(404).json({
         success: false,
-        message: 'Some students were not found',
-        data: {
-          missingUsns
-        }
+        message: 'Some students not found',
+        nonExistentUsns
       });
     }
 
-    // Delete existing entries for this session (to replace them)
-    await prisma.attendanceEntry.deleteMany({
-      where: {
-        sessionId
-      }
-    });
-
-    // Create all entries in a transaction
-    const createdEntries = await prisma.$transaction(
-      entries.map(entry => 
-        prisma.attendanceEntry.create({
-          data: {
+    // Process entries (update or create)
+    const results = await Promise.all(
+      validatedEntries.map(async entry => {
+        const { usn, status } = entry;
+        
+        // Check if entry already exists
+        const existingEntry = await prisma.attendanceEntry.findFirst({
+          where: {
             sessionId,
-            usn: entry.usn,
-            status: entry.status
+            usn
           }
-        })
-      )
+        });
+
+        if (existingEntry) {
+          // Update existing entry
+          return prisma.attendanceEntry.update({
+            where: {
+              id: existingEntry.id
+            },
+            data: {
+              status
+            }
+          });
+        } else {
+          // Create new entry
+          return prisma.attendanceEntry.create({
+            data: {
+              sessionId,
+              usn,
+              status
+            }
+          });
+        }
+      })
     );
 
-    res.json({
+    res.status(200).json({
       success: true,
-      message: `Successfully uploaded ${createdEntries.length} attendance entries`,
+      message: 'Attendance entries processed successfully',
       data: {
-        sessionId,
-        entriesCount: createdEntries.length
+        created: results.filter(result => !('id' in result)).length,
+        updated: results.filter(result => 'id' in result).length,
+        total: results.length
       }
     });
   } catch (error) {
@@ -471,10 +497,9 @@ export const bulkUploadAttendance = async (req: Request, res: Response) => {
  */
 export const getStudentAttendanceSummary = async (req: Request, res: Response) => {
   try {
-    const { usn } = req.params;
-    const { subjectId, academicYear, semester } = req.query;
+    const { usn, academicYear, semester } = req.params;
 
-    // Validate student exists
+    // Check if student exists
     const student = await prisma.student.findUnique({
       where: { usn }
     });
@@ -486,101 +511,129 @@ export const getStudentAttendanceSummary = async (req: Request, res: Response) =
       });
     }
 
-    // Build filter conditions
-    const filterConditions: any = {
-      usn
-    };
-
-    if (subjectId) {
-      filterConditions.session = {
-        subjectId: parseInt(subjectId as string)
-      };
-    }
-
-    if (academicYear) {
-      if (!filterConditions.session) filterConditions.session = {};
-      filterConditions.session.academicYear = academicYear as string;
-    }
-
-    if (semester) {
-      if (!filterConditions.session) filterConditions.session = {};
-      filterConditions.session.semester = parseInt(semester as string);
-    }
-
-    // Get attendance entries with session details
-    const attendanceEntries = await prisma.attendanceEntry.findMany({
-      where: filterConditions,
-      include: {
-        session: {
-          include: {
-            subject: {
-              select: {
-                id: true,
-                name: true,
-                code: true
-              }
-            }
-          }
+    // Get all attendance sessions for the student's current semester and academic year
+    const sessions = await prisma.attendanceSession.findMany({
+      where: {
+        academicYear,
+        semester: parseInt(semester),
+        subject: {
+          departmentId: student.departmentId
         }
       },
-      orderBy: {
-        session: {
-          attendanceDate: 'desc'
+      include: {
+        subject: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            isLab: true
+          }
+        },
+        entries: {
+          where: {
+            usn
+          }
         }
       }
     });
 
-    // Calculate attendance percentage by subject
-    const subjectAttendance: Record<number, { 
-      subject: any, 
-      totalSessions: number, 
-      present: number, 
-      absent: number, 
-      other: number, 
-      percentage: number 
-    }> = {};
+    // Group sessions by subject
+    const subjects = new Map();
 
-    for (const entry of attendanceEntries) {
-      const subjectId = entry.session.subject.id;
+    sessions.forEach(session => {
+      const subjectId = session.subjectId;
       
-      if (!subjectAttendance[subjectId]) {
-        subjectAttendance[subjectId] = {
-          subject: entry.session.subject,
-          totalSessions: 0,
-          present: 0,
-          absent: 0,
-          other: 0,
-          percentage: 0
-        };
+      if (!subjects.has(subjectId)) {
+        subjects.set(subjectId, {
+          id: session.subject.id,
+          name: session.subject.name,
+          code: session.subject.code,
+          isLab: session.subject.isLab,
+          theoryClasses: 0,
+          labClasses: 0,
+          theoryPresent: 0,
+          labPresent: 0,
+          sessions: []
+        });
       }
-
-      subjectAttendance[subjectId].totalSessions++;
-
-      if (entry.status === 'Present') {
-        subjectAttendance[subjectId].present++;
-      } else if (entry.status === 'Absent') {
-        subjectAttendance[subjectId].absent++;
+      
+      const subject = subjects.get(subjectId);
+      
+      // Count classes and add session details
+      if (session.duration > 1 || session.subject.isLab) {
+        subject.labClasses += session.duration;
+        
+        if (session.entries.length > 0 && session.entries[0].status === 'Present') {
+          subject.labPresent += session.duration;
+        }
       } else {
-        subjectAttendance[subjectId].other++;
+        subject.theoryClasses += session.duration;
+        
+        if (session.entries.length > 0 && session.entries[0].status === 'Present') {
+          subject.theoryPresent += session.duration;
+        }
       }
-    }
+      
+      subject.sessions.push({
+        id: session.id,
+        date: session.attendanceDate,
+        slot: session.sessionSlot,
+        duration: session.duration,
+        status: session.entries.length > 0 ? session.entries[0].status : 'Not Marked',
+        isLab: session.duration > 1 || session.subject.isLab
+      });
+    });
 
-    // Calculate percentages
-    for (const key in subjectAttendance) {
-      const subject = subjectAttendance[key];
-      subject.percentage = (subject.present / subject.totalSessions) * 100;
-    }
+    // Calculate percentages and prepare response
+    const attendanceSummary = [];
+    
+    subjects.forEach(subject => {
+      // Calculate percentages
+      const theoryPercentage = subject.theoryClasses > 0 
+        ? (subject.theoryPresent / subject.theoryClasses) * 100 
+        : null;
+        
+      const labPercentage = subject.labClasses > 0 
+        ? (subject.labPresent / subject.labClasses) * 100 
+        : null;
+        
+      const totalClasses = subject.theoryClasses + subject.labClasses;
+      const totalPresent = subject.theoryPresent + subject.labPresent;
+      
+      const overallPercentage = totalClasses > 0 
+        ? (totalPresent / totalClasses) * 100 
+        : null;
+
+      attendanceSummary.push({
+        subject: {
+          id: subject.id,
+          name: subject.name,
+          code: subject.code
+        },
+        attendance: {
+          theory: {
+            total: subject.theoryClasses,
+            present: subject.theoryPresent,
+            percentage: theoryPercentage !== null ? parseFloat(theoryPercentage.toFixed(2)) : null
+          },
+          lab: {
+            total: subject.labClasses,
+            present: subject.labPresent,
+            percentage: labPercentage !== null ? parseFloat(labPercentage.toFixed(2)) : null
+          },
+          overall: {
+            total: totalClasses,
+            present: totalPresent,
+            percentage: overallPercentage !== null ? parseFloat(overallPercentage.toFixed(2)) : null
+          }
+        },
+        sessions: subject.sessions
+      });
+    });
 
     res.json({
       success: true,
-      data: {
-        student: {
-          usn: student.usn,
-          name: `${student.firstName} ${student.lastName}`
-        },
-        summary: Object.values(subjectAttendance),
-        entries: attendanceEntries
-      }
+      data: attendanceSummary
     });
   } catch (error) {
     console.error('Get student attendance summary error:', error);
@@ -599,9 +652,8 @@ export const createBatchAttendanceSessions = async (req: Request, res: Response)
     const { 
       subjectId, 
       facultyId, 
-      dateRange, 
-      sessionSlot, 
-      sessionType,
+      sessionDates, 
+      sessionSlots, 
       duration, 
       academicYear, 
       semester, 
@@ -621,14 +673,6 @@ export const createBatchAttendanceSessions = async (req: Request, res: Response)
       });
     }
 
-    // Validate subject is active
-    if (subject.status !== 'active') {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot create attendance sessions for subjects that are not active'
-      });
-    }
-
     // Validate that faculty exists if facultyId is provided
     if (facultyId) {
       const faculty = await prisma.faculty.findUnique({
@@ -641,113 +685,89 @@ export const createBatchAttendanceSessions = async (req: Request, res: Response)
           message: 'Faculty not found'
         });
       }
+    }
 
-      // Check faculty-subject mapping
-      const mapping = await prisma.facultySubjectMapping.findFirst({
-        where: {
-          facultyId,
-          subjectId
-        }
+    // Validate input arrays
+    if (!Array.isArray(sessionDates) || sessionDates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'sessionDates must be a non-empty array'
       });
+    }
 
-      if (!mapping) {
-        return res.status(403).json({
-          success: false,
-          message: 'Faculty is not mapped to this subject'
+    if (!Array.isArray(sessionSlots) || sessionSlots.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'sessionSlots must be a non-empty array'
+      });
+    }
+
+    // Create combinations of all dates and slots
+    const sessions = [];
+    
+    for (const date of sessionDates) {
+      for (const slot of sessionSlots) {
+        sessions.push({
+          date: new Date(date),
+          slot: parseInt(slot)
         });
       }
     }
 
-    // Set default duration based on session type
-    let calculatedDuration = duration || 1;
-    if (sessionType === 'lab' && !duration) {
-      calculatedDuration = 3; // Default 3 periods for lab sessions
-    }
-
-    // Parse date range
-    const { startDate, endDate } = dateRange;
-    if (!startDate || !endDate) {
-      return res.status(400).json({
-        success: false,
-        message: 'Start date and end date are required'
-      });
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (start > end) {
-      return res.status(400).json({
-        success: false,
-        message: 'Start date cannot be after end date'
-      });
-    }
-
-    // Generate array of dates in range
-    const dates = [];
-    const currentDate = new Date(start);
-    while (currentDate <= end) {
-      dates.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    // Check for existing sessions in the date range
+    // Check for existing sessions
     const existingSessions = await prisma.attendanceSession.findMany({
       where: {
         subjectId,
-        sessionSlot,
-        attendanceDate: {
-          gte: start,
-          lte: end
-        }
+        AND: sessions.map(session => ({
+          attendanceDate: session.date,
+          sessionSlot: session.slot
+        }))
       }
     });
 
-    // Create a lookup for existing dates to avoid duplicates
-    const existingDates = new Map();
+    // Filter out existing sessions
+    const existingSessionMap = new Map();
+    
     existingSessions.forEach(session => {
-      const dateKey = session.attendanceDate.toISOString().split('T')[0];
-      existingDates.set(dateKey, true);
+      const key = `${session.attendanceDate.toISOString()}_${session.sessionSlot}`;
+      existingSessionMap.set(key, true);
+    });
+    
+    const sessionsToCreate = sessions.filter(session => {
+      const key = `${session.date.toISOString()}_${session.slot}`;
+      return !existingSessionMap.has(key);
     });
 
-    // Create batch data for insertion
-    const batchData = dates
-      .filter(date => {
-        const dateKey = date.toISOString().split('T')[0];
-        return !existingDates.has(dateKey);
-      })
-      .map(date => ({
+    if (sessionsToCreate.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'All requested sessions already exist'
+      });
+    }
+
+    // Create new sessions
+    const createdSessions = await prisma.attendanceSession.createMany({
+      data: sessionsToCreate.map(session => ({
         subjectId,
         facultyId,
-        attendanceDate: date,
-        sessionSlot,
-        duration: calculatedDuration,
+        attendanceDate: session.date,
+        sessionSlot: session.slot,
+        duration: duration || 1,
         academicYear,
         semester,
         section,
         batchId
-      }));
-
-    if (batchData.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No new sessions to create. Sessions may already exist for these dates.'
-      });
-    }
-
-    // Create attendance sessions in batch
-    const createdSessions = await prisma.$transaction(
-      batchData.map(data => 
-        prisma.attendanceSession.create({ data })
-      )
-    );
+      })),
+      skipDuplicates: true
+    });
 
     res.status(201).json({
       success: true,
-      message: `${createdSessions.length} attendance sessions created successfully`,
+      message: 'Attendance sessions created successfully',
       data: {
-        sessions: createdSessions,
-        skippedDates: dates.length - createdSessions.length
+        created: createdSessions.count,
+        skipped: sessions.length - createdSessions.count,
+        total: sessions.length
       }
     });
   } catch (error) {
@@ -764,118 +784,120 @@ export const createBatchAttendanceSessions = async (req: Request, res: Response)
  */
 export const batchEditAttendance = async (req: Request, res: Response) => {
   try {
-    const { sessionIds, entries } = req.body;
+    const { sessionId, entries } = req.body;
 
-    // Validate that sessions exist
-    const sessions = await prisma.attendanceSession.findMany({
-      where: {
-        id: {
-          in: sessionIds
-        }
-      }
+    // Validate session exists
+    const session = await prisma.attendanceSession.findUnique({
+      where: { id: sessionId }
     });
 
-    if (sessions.length !== sessionIds.length) {
+    if (!session) {
       return res.status(404).json({
         success: false,
-        message: 'One or more attendance sessions not found'
+        message: 'Attendance session not found'
       });
     }
 
-    // Validate the USNs exist
-    const usns: string[] = Array.from(new Set(entries.map((entry: any) => entry.usn)));
-    const students = await prisma.student.findMany({
-      where: {
-        usn: {
-          in: usns
-        }
-      },
-      select: {
-        usn: true
-      }
-    });
-
-    if (students.length !== usns.length) {
-      return res.status(404).json({
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({
         success: false,
-        message: 'One or more students not found'
+        message: 'Entries must be a non-empty array'
       });
     }
 
-    // Get existing entries for these sessions and students
+    // Schema for validating entries
+    const entrySchema = z.object({
+      usn: z.string(),
+      status: z.enum(['Present', 'Absent', 'Late', 'Excused'])
+    });
+
+    // Validate each entry
+    const validatedEntries = [];
+    const errors = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const result = entrySchema.safeParse(entries[i]);
+      
+      if (result.success) {
+        validatedEntries.push(result.data);
+      } else {
+        errors.push({
+          index: i,
+          errors: result.error.format()
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid entries found',
+        errors
+      });
+    }
+
+    // Get all existing entries for this session
     const existingEntries = await prisma.attendanceEntry.findMany({
       where: {
-        sessionId: {
-          in: sessionIds
-        },
-        usn: {
-          in: usns
-        }
+        sessionId
       }
     });
 
     // Create a map for quick lookup
-    const entryMap = new Map();
+    const existingEntriesMap = new Map();
     existingEntries.forEach(entry => {
-      const key = `${entry.sessionId}-${entry.usn}`;
-      entryMap.set(key, entry);
+      existingEntriesMap.set(entry.usn, entry);
     });
 
-    // Separate updates and creates
-    const updates = [];
-    const creates = [];
+    // Process entries (update or create)
+    const updatePromises = [];
+    const createEntries = [];
 
-    // Process each entry for each session
-    for (const sessionId of sessionIds) {
-      for (const entry of entries) {
-        const { usn, status } = entry;
-        const key = `${sessionId}-${usn}`;
+    validatedEntries.forEach(entry => {
+      const { usn, status } = entry;
+      
+      if (existingEntriesMap.has(usn)) {
+        const existingEntry = existingEntriesMap.get(usn);
         
-        if (entryMap.has(key)) {
-          // Entry exists, update it
-          const existingEntry = entryMap.get(key);
-          updates.push(
+        if (existingEntry.status !== status) {
+          updatePromises.push(
             prisma.attendanceEntry.update({
-              where: { id: existingEntry.id },
-              data: { status }
-            })
-          );
-        } else {
-          // Entry doesn't exist, create it
-          creates.push(
-            prisma.attendanceEntry.create({
+              where: {
+                id: existingEntry.id
+              },
               data: {
-                sessionId,
-                usn,
                 status
               }
             })
           );
         }
+      } else {
+        createEntries.push({
+          sessionId,
+          usn,
+          status
+        });
       }
-    }
+    });
 
-    // Execute all operations in a transaction
-    let updatedEntriesResults = [];
-    let createdEntriesResults = [];
+    // Execute all updates and creates
+    const updateResults = await Promise.all(updatePromises);
     
-    // Only attempt transactions if there are operations to perform
-    if (updates.length > 0 || creates.length > 0) {
-      if (updates.length > 0) {
-        updatedEntriesResults = await Promise.all(updates);
-      }
-      
-      if (creates.length > 0) {
-        createdEntriesResults = await Promise.all(creates);
-      }
+    let createResults = { count: 0 };
+    if (createEntries.length > 0) {
+      createResults = await prisma.attendanceEntry.createMany({
+        data: createEntries,
+        skipDuplicates: true
+      });
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: 'Attendance entries updated successfully',
       data: {
-        updated: updatedEntriesResults.length,
-        created: createdEntriesResults.length
+        updated: updateResults.length,
+        created: createResults.count,
+        total: validatedEntries.length
       }
     });
   } catch (error) {
@@ -892,47 +914,21 @@ export const batchEditAttendance = async (req: Request, res: Response) => {
  */
 export const getStudentsBelowThreshold = async (req: Request, res: Response) => {
   try {
-    const { facultyId, threshold = 85, subjectId, academicYear, semester } = req.query;
+    const { academicYear, semester, threshold } = req.query;
     
-    // Build filter conditions
-    const filterConditions: any = {};
-    
-    if (facultyId) {
-      // Get subjects mapped to this faculty
-      const facultySubjects = await prisma.facultySubjectMapping.findMany({
-        where: { facultyId: String(facultyId) },
-        select: { subjectId: true }
+    if (!academicYear || !semester || !threshold) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required parameters: academicYear, semester, and threshold'
       });
-      
-      const subjectIds = facultySubjects.map(mapping => mapping.subjectId);
-      
-      if (subjectIds.length === 0) {
-        return res.json({
-          success: true,
-          data: [] // No subjects mapped to faculty
-        });
-      }
-      
-      filterConditions.subjectId = {
-        in: subjectIds
-      };
     }
     
-    if (subjectId) {
-      filterConditions.subjectId = parseInt(subjectId as string);
-    }
-    
-    if (academicYear) {
-      filterConditions.academicYear = academicYear as string;
-    }
-    
-    if (semester) {
-      filterConditions.semester = parseInt(semester as string);
-    }
-    
-    // Get all attendance sessions matching the filters
+    // Get all attendance sessions for the semester and academic year
     const sessions = await prisma.attendanceSession.findMany({
-      where: filterConditions,
+      where: {
+        academicYear: academicYear as string,
+        semester: parseInt(semester as string)
+      },
       include: {
         subject: {
           select: {
@@ -1071,4 +1067,4 @@ export const getStudentsBelowThreshold = async (req: Request, res: Response) => 
       message: 'Internal server error'
     });
   }
-}; 
+};

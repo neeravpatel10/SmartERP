@@ -29,7 +29,8 @@ export const getAllMappings = async (req: Request, res: Response) => {
     if (componentScope) filters.componentScope = componentScope as string;
     
     // Handle active filter
-    if (active !== undefined) {
+    if (active !== undefined && active !== 'all') {
+      // Only apply filter if active is not 'all'
       filters.active = active === 'true';
     }
 
