@@ -6,6 +6,8 @@ export interface JwtPayload {
   username: string;
   loginType: number;
   departmentId?: number;
+  iat?: number;  // issued at timestamp (added by jwt.sign)
+  exp?: number;  // expiration timestamp (added by jwt.sign)
 }
 
 // Extend Express Request with authenticated user

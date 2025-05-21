@@ -147,6 +147,8 @@ export const getBlueprint = async (subjectId: number, cieNo: number) => {
  */
 export const updateBlueprint = async (blueprintId: number, input: Omit<BlueprintInput, 'createdBy'>) => {
   return prisma.$transaction(async (tx) => {
+    console.log(`Updating blueprint ${blueprintId} for subject ${input.subjectId}, CIE ${input.cieNo}`);
+    
     // Update blueprint basic info
     await tx.internalexamblueprint.update({
       where: { id: blueprintId },
@@ -156,35 +158,104 @@ export const updateBlueprint = async (blueprintId: number, input: Omit<Blueprint
       }
     });
 
-    // Delete existing sub-questions
-    await tx.internalsubquestion.deleteMany({
-      where: { blueprintId }
+    // Get existing subquestions
+    const existingSubQuestions = await tx.internalsubquestion.findMany({
+      where: { blueprintId },
+      include: {
+        marks: {
+          select: { studentUsn: true },
+          take: 1 // We just need to know if there are any marks, not all of them
+        }
+      }
     });
 
-    // Create new sub-questions
+    console.log(`Found ${existingSubQuestions.length} existing subquestions`);
+    
+    // Collect subquestions that have associated marks
+    const subQuestionsWithMarks = existingSubQuestions.filter(
+      sq => sq.marks.length > 0
+    );
+    
+    console.log(`Found ${subQuestionsWithMarks.length} subquestions with marks`);
+
+    // Safely delete subquestions that don't have marks
+    if (existingSubQuestions.length > subQuestionsWithMarks.length) {
+      const subQuestionsToDelete = existingSubQuestions.filter(
+        sq => sq.marks.length === 0
+      ).map(sq => sq.id);
+      
+      console.log(`Deleting ${subQuestionsToDelete.length} subquestions without marks`);
+      
+      await tx.internalsubquestion.deleteMany({
+        where: {
+          id: { in: subQuestionsToDelete }
+        }
+      });
+    }
+    
+    // Create a map of existing subquestions with marks by questionNo and label
+    // This helps us preserve subquestions with marks that match new questions
+    const existingSubQMap = new Map();
+    subQuestionsWithMarks.forEach(sq => {
+      const key = `${sq.questionNo}|${sq.label}`;
+      existingSubQMap.set(key, sq);
+    });
+
+    // Create new sub-questions, preserving IDs for ones that already have marks
     const subQuestions = [];
+    const processedSubQIds = new Set();
     
     for (const question of input.questions) {
       for (const sub of question.subs) {
-        const subQuestion = await tx.internalsubquestion.create({
-          data: {
-            blueprintId,
-            questionNo: question.questionNo,
-            label: sub.label,
-            maxMarks: sub.maxMarks
-          }
-        });
+        // Check if there's an existing subquestion with the same question number and label
+        const key = `${question.questionNo}|${sub.label}`;
+        const existingSQ = existingSubQMap.get(key);
+        
+        let subQuestion;
+        
+        if (existingSQ) {
+          // Update existing subquestion
+          subQuestion = await tx.internalsubquestion.update({
+            where: { id: existingSQ.id },
+            data: {
+              maxMarks: sub.maxMarks
+              // Keep the questionNo and label as they are to preserve mark associations
+            }
+          });
+          processedSubQIds.add(existingSQ.id);
+        } else {
+          // Create new subquestion
+          subQuestion = await tx.internalsubquestion.create({
+            data: {
+              blueprintId,
+              questionNo: question.questionNo,
+              label: sub.label,
+              maxMarks: sub.maxMarks
+            }
+          });
+        }
+        
         subQuestions.push(subQuestion);
       }
     }
+    
+    // Remove any remaining subquestions with marks that weren't included in the update
+    const unusedSubQIds = subQuestionsWithMarks
+      .filter(sq => !processedSubQIds.has(sq.id))
+      .map(sq => sq.id);
+      
+    if (unusedSubQIds.length > 0) {
+      console.log(`Warning: ${unusedSubQIds.length} subquestions with marks were not included in the update`);
+      // We don't delete these to preserve student marks
+      // They will effectively be "hidden" from the blueprint but preserved in the database
+    }
 
-    // Get the updated blueprint with sub-questions
-    const updatedBlueprint = await tx.internalexamblueprint.findUnique({
-      where: { id: blueprintId },
-      include: { subqs: true }
-    });
-
-    return updatedBlueprint;
+    return {
+      id: blueprintId,
+      subjectId: input.subjectId,
+      cieNo: input.cieNo,
+      subQuestions
+    };
   });
 };
 
@@ -286,7 +357,7 @@ export const getGridData = async (subjectId: number, cieNo: number): Promise<Gri
 /**
  * Save a single mark entry and recalculate totals
  */
-export const saveSingleMark = async (subqId: number, studentUsn: string, marks: number) => {
+export const saveSingleMark = async (subqId: number, studentUsn: string, marks: number | null) => {
   return prisma.$transaction(async (tx) => {
     // Find the sub-question to get maxMarks
     const subq = await tx.internalsubquestion.findUnique({
@@ -300,41 +371,55 @@ export const saveSingleMark = async (subqId: number, studentUsn: string, marks: 
       throw new Error('Sub-question not found');
     }
 
-    // Validate marks don't exceed max marks
-    const maxMarksValue = Number(subq.maxMarks);
-    if (marks > maxMarksValue) {
-      throw new Error(`Marks cannot exceed maximum marks (${maxMarksValue})`);
-    }
-
-    // Upsert the mark
-    const mark = await tx.studentsubquestionmarks.upsert({
-      where: {
-        subqId_studentUsn: {
-          subqId,
-          studentUsn
-        }
-      },
-      update: {
-        marks: marks as unknown as Prisma.Decimal
-      },
-      create: {
-        subqId,
-        studentUsn,
-        marks: marks as unknown as Prisma.Decimal
+    // Validate marks don't exceed max marks (only if marks is not null)
+    if (marks !== null) {
+      const maxMarksValue = Number(subq.maxMarks);
+      if (marks > maxMarksValue) {
+        throw new Error(`Marks cannot exceed maximum marks (${maxMarksValue})`);
       }
-    });
-
-    // Recalculate and update totals - need to get user ID from student USN
-    const student = await tx.student.findUnique({
-      where: { usn: studentUsn },
-      select: { userId: true }
-    });
-    
-    if (student?.userId) {
-      await calculateInternalTotals(tx, student.userId, subq.blueprint.subjectId, subq.blueprint.cieNo);
     }
 
-    return mark;
+    let mark;
+    
+    try {
+      // Upsert the mark
+      mark = await tx.studentsubquestionmarks.upsert({
+        where: {
+          subqId_studentUsn: {
+            subqId,
+            studentUsn
+          }
+        },
+        update: {
+          // Handle null marks properly
+          marks: marks === null ? null : marks as unknown as Prisma.Decimal
+        },
+        create: {
+          subqId,
+          studentUsn,
+          // Handle null marks properly
+          marks: marks === null ? null : marks as unknown as Prisma.Decimal
+        }
+      });
+      
+      // Log success for debugging
+      console.log(`Saved mark successfully: subqId=${subqId}, studentUsn=${studentUsn}, marks=${marks}`);
+      
+      // Recalculate and update totals - need to get user ID from student USN
+      const student = await tx.student.findUnique({
+        where: { usn: studentUsn },
+        select: { userId: true }
+      });
+      
+      if (student?.userId) {
+        await calculateInternalTotals(tx, student.userId, subq.blueprint.subjectId, subq.blueprint.cieNo);
+      }
+      
+      return mark;
+    } catch (error) {
+      console.error('Error saving mark:', error);
+      throw new Error(`Failed to save mark: ${error.message}`);
+    }
   });
 };
 

@@ -91,7 +91,7 @@ export interface BlueprintPayload {
 export interface SaveMarkPayload {
   subqId: number;
   studentUsn: string; // Changed from studentId (number) to studentUsn (string)
-  marks: number;
+  marks: number | null;
 }
 
 /**
@@ -177,7 +177,12 @@ export const useInternalMarks = () => {
       
       // Handle common error cases
       if (error.response?.status === 404) {
-        // Not found is not an error, just return null
+        // It's a blueprint not found case - set a specific error for this
+        const errorData = error.response.data as ApiErrorResponse;
+        if (errorData?.message === 'Blueprint not found') {
+          setError('Blueprint not found');
+          console.log('Blueprint not found for subject', subjectId, 'and CIE', cieNo);
+        }
         return null;
       }
       
@@ -203,13 +208,34 @@ export const useInternalMarks = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Get token directly from localStorage
+      const token = localStorage.getItem('token');
+      
+      // Create headers with authorization token
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      };
+      
+      console.log('Updating blueprint with token:', token ? 'Token present' : 'No token');
+      
       const response = await api.put<ApiResponse<Blueprint>>(
         `/marks/internal/blueprint/${id}`, 
-        blueprint
+        blueprint,
+        { headers: headers }
       );
+      
       return response.data.data;
     } catch (err) {
       const error = err as AxiosError;
+      console.error('Error updating blueprint:', error.response?.status, error.response?.data);
+      
+      if (error.response?.status === 401) {
+        showNotification('Authentication error. Please log in again.', 'error');
+        navigate('/login');
+      }
+      
       const message = (error.response?.data as ApiErrorResponse)?.message || 'Error updating blueprint';
       setError(message);
       return null;
@@ -223,14 +249,49 @@ export const useInternalMarks = () => {
     cieNo: number
   ): Promise<GridData | null> => {
     try {
+      // Input validation first
+      if (!subjectId || isNaN(Number(subjectId))) {
+        console.error('Invalid subject ID:', subjectId);
+        setError('Invalid subject ID');
+        return null;
+      }
+
+      if (!cieNo || isNaN(Number(cieNo))) {
+        console.error('Invalid CIE number:', cieNo);
+        setError('Invalid CIE number');
+        return null;
+      }
+      
       setLoading(true);
       setError(null);
-      const response = await api.get<ApiResponse<GridData>>(
-        `/marks/internal/grid?subjectId=${subjectId}&cieNo=${cieNo}`
-      );
+      
+      // Construct proper URL with explicit string for better error detection
+      const url = `/marks/internal/grid?subjectId=${subjectId}&cieNo=${cieNo}`;
+      console.log('Fetching grid data from:', url);
+      
+      // Explicitly set request configuration
+      const response = await api.get<ApiResponse<GridData>>(url, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.data) {
+        console.error('Empty response data');
+        setError('Received empty response from server');
+        return null;
+      }
+      
       return response.data.data;
     } catch (err) {
       const error = err as AxiosError;
+      console.error('Grid data fetch error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      
       const message = (error.response?.data as ApiErrorResponse)?.message || 'Error fetching grid data';
       setError(message);
       return null;
@@ -241,23 +302,48 @@ export const useInternalMarks = () => {
 
   const saveSingleMark = useCallback(async ({ subqId, studentUsn, marks }: SaveMarkPayload) => {
     // Validate parameters to avoid invalid ID format errors
-    if (isNaN(subqId) || !studentUsn || isNaN(marks)) {
+    if (isNaN(subqId) || !studentUsn) {
       showNotification('Invalid parameters for saving mark', 'error');
+      return false;
+    }
+    
+    // Only validate as number if marks is not null
+    if (marks !== null && isNaN(marks)) {
+      showNotification('Invalid mark value', 'error');
       return false;
     }
 
     try {
       const controller = new AbortController();
       
+      // Get token directly from localStorage
+      const token = localStorage.getItem('token');
+      
+      // Create headers with authorization token
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      };
+      
+      console.log('Saving mark with token:', token ? 'Token present' : 'No token');
+      console.log('Saving mark data:', { subqId, studentUsn, marks });
+      
       const response = await api.post('/marks/internal/marks', {
         subqId,
         studentUsn,
         marks
-      }, { signal: controller.signal }
-      );
+      }, { 
+        signal: controller.signal,
+        headers: headers
+      });
       
       if (response.data.success) {
         return true;
+      } else {
+        // If the request was not aborted but server returned success: false
+        const errorMessage = response.data.message || 'Failed to save mark';
+        showNotification(errorMessage, 'error');
+        return false;
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -265,14 +351,15 @@ export const useInternalMarks = () => {
       }
 
       if (error.response?.status === 401) {
+        showNotification('Authentication error. Please log in again.', 'error');
         navigate('/login');
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to save mark';
+        console.error('Error saving mark:', error.response?.status, error.response?.data);
         showNotification(errorMessage, 'error');
       }
       return false;
     }
-    return false;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, showNotification]);
 

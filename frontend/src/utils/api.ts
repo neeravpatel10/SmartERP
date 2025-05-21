@@ -212,11 +212,23 @@ api.interceptors.request.use(
       // Clean old timestamps (older than 1 second)
       requestTimestamps = requestTimestamps.filter(timestamp => now - timestamp < 1000);
       
+      // Skip throttling for critical endpoints that should never be delayed
+      const criticalEndpoints = [
+        '/marks/internal/grid',
+        '/marks/internal/blueprint'
+      ];
+      
+      const isCriticalRequest = criticalEndpoints.some(criticalPath => 
+        endpoint.includes(criticalPath)
+      );
+      
       // Queue this request if:
-      // 1. Already processing another request
-      // 2. Already have 2+ requests in the last second
+      // 1. Already processing another non-critical request
+      // 2. Already have 3+ requests in the last second (increased from 2)
       // 3. Already have a pending request to same endpoint
-      if (processingRequest || requestTimestamps.length >= 2 || pendingRequests[endpoint]) {
+      // But never queue critical endpoints like grid data
+      if (!isCriticalRequest && 
+          (processingRequest || requestTimestamps.length >= 3 || pendingRequests[endpoint])) {
         // Add to queue
         if (!queuedRequests[endpoint]) {
           queuedRequests[endpoint] = [];

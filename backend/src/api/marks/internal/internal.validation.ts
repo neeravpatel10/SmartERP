@@ -23,7 +23,10 @@ export const blueprintSchema = z.object({
 export const singleMarkEntrySchema = z.object({
   subqId: z.number().int().positive(),
   studentUsn: z.string().min(1), // Changed from studentId (number) to studentUsn (string)
-  marks: z.number().nonnegative().max(100)
+  marks: z.union([
+    z.number().nonnegative().max(100),
+    z.null()
+  ])
 });
 
 // Schema for query params for blueprint & grid endpoints

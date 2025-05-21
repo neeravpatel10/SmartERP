@@ -87,20 +87,40 @@ export async function calculateInternalTotals(
   const totalRaw = bestPartA + bestPartB;
   const total = Math.round(totalRaw);
 
-  // Store the calculated totals in internal_marks table (if it exists)
-  try {
-    await tx.$executeRaw`
-      INSERT INTO internal_marks (student_id, subject_id, cie_no, best_part_a, best_part_b, total)
-      VALUES (${userId}, ${subjectId}, ${cieNo}, ${Math.round(bestPartA)}, ${Math.round(bestPartB)}, ${total})
-      ON DUPLICATE KEY UPDATE
-        best_part_a = VALUES(best_part_a),
-        best_part_b = VALUES(best_part_b),
-        total = VALUES(total)
-    `;
-  } catch (error) {
-    console.warn('Could not update internal_marks table. It may not exist in the schema:', error);
-    // The table may not exist yet, so we'll just log a warning
-  }
+  // Store the calculated totals in a more accessible format for reporting
+  // We'll use a custom table or field in the future, but for now
+  // let's just log the results for debugging
+  console.log(`Total marks for student ${student.usn} in subject ${subjectId}, CIE ${cieNo}:`, {
+    bestPartA,
+    bestPartB,
+    total
+  });
+  
+  // Future implementation using Prisma models instead of raw SQL
+  /*
+  await tx.studentInternalTotals.upsert({
+    where: {
+      studentUsn_subjectId_cieNo: {
+        studentUsn: student.usn,
+        subjectId: subjectId,
+        cieNo: cieNo
+      }
+    },
+    update: {
+      bestPartA: bestPartA,
+      bestPartB: bestPartB,
+      total: total
+    },
+    create: {
+      studentUsn: student.usn,
+      subjectId: subjectId,
+      cieNo: cieNo,
+      bestPartA: bestPartA,
+      bestPartB: bestPartB,
+      total: total
+    }
+  });
+  */
   
   /* Commented out because model doesn't exist in schema
   await tx.studentinternaltotals.upsert({

@@ -85,6 +85,19 @@ const InternalMarksPage: React.FC = () => {
     downloadTemplate,
     uploadMarks
   } = useInternalMarks();
+  
+  // Notification helper function - moved to the top to avoid usage before declaration
+  const showNotification = (message: string, type: AlertSeverity): void => {
+    setNotification({
+      open: true,
+      message,
+      type
+    });
+  };
+  
+  const handleCloseNotification = (): void => {
+    setNotification((prev) => ({ ...prev, open: false }));
+  };
 
   // Parse query parameters from URL and load data directly if subject is provided
   useEffect(() => {
@@ -160,6 +173,18 @@ const InternalMarksPage: React.FC = () => {
     fetchSubjects();
   }, []); // Only run once on component mount
 
+  // Add a separate effect to detect when we need to show the blueprint modal
+  useEffect(() => {
+    // Open the modal automatically when there's an error and no blueprint
+    // This helps when the getBlueprint call fails with a 404 or other error
+    if (error && !blueprint && selectedSubject && selectedCIE &&
+        (user?.loginType === 2 || user?.loginType === 3)) {
+      // Force modal to open without waiting for the timeout
+      console.log('Opening blueprint modal automatically...');
+      setIsModalOpen(true);
+    }
+  }, [error, blueprint, selectedSubject, selectedCIE, user]);
+
   // Load blueprint and grid data when subject and CIE are selected
   useEffect(() => {
     // Skip if either subject or CIE is not selected
@@ -168,44 +193,82 @@ const InternalMarksPage: React.FC = () => {
     // Create a controller for each new data loading operation
     const controller = new AbortController();
     
+    // Update URL to reflect current selection (without causing navigation)
+    // Do this outside the async function to avoid potential race conditions
+    const subjectId = Number(selectedSubject);
+    const cieNo = Number(selectedCIE);
+    const newParams = new URLSearchParams(location.search);
+    newParams.set('subjectId', subjectId.toString());
+    newParams.set('cieNo', cieNo.toString());
+    
+    // Use replace to avoid adding to history stack
+    const newUrl = `${location.pathname}?${newParams.toString()}`;
+    if (location.search !== `?${newParams.toString()}`) {
+      navigate(newUrl, { replace: true });
+    }
+    
+    // Flag to track if this effect run is still current
+    let isCurrentRequest = true;
+    
     const loadData = async () => {
       try {
-        // Convert to numbers to ensure consistent type handling
-        const subjectId = Number(selectedSubject);
-        const cieNo = Number(selectedCIE);
+        console.log(`Loading data for subject=${subjectId}, CIE=${cieNo}`);
         
-        // Update URL to reflect current selection (without causing navigation)
-        const newParams = new URLSearchParams(location.search);
-        newParams.set('subjectId', subjectId.toString());
-        newParams.set('cieNo', cieNo.toString());
-        navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
-        
-        // Load blueprint with the abort controller signal
+        // Load blueprint
         const blueprint = await getBlueprint(subjectId, cieNo);
         
-        // Only update state if not aborted
-        if (!controller.signal.aborted) {
+        // Only update state if this is still the current request and not aborted
+        if (isCurrentRequest && !controller.signal.aborted) {
           setBlueprint(blueprint);
           
           // If there's no blueprint and we're a faculty member or department admin,
           // show a message suggesting to create one
           if (!blueprint && (user?.loginType === 2 || user?.loginType === 3)) {
-            showNotification('No blueprint found for this subject and CIE. Create one to continue.', 'info');
+            setNotification({
+              open: true,
+              message: 'No blueprint found for this subject and CIE. Create one to continue.',
+              type: 'info'
+            });
           }
         }
         
-        // Load grid data with the abort controller signal
+        // Load grid data
         const gridData = await getGridData(subjectId, cieNo);
         
-        // Only update state if not aborted
-        if (!controller.signal.aborted) {
+        // Only update state if still current
+        if (isCurrentRequest && !controller.signal.aborted) {
           setGridData(gridData);
         }
       } catch (error: any) {
-        // Only show errors if not aborted
-        if (error.name !== 'AbortError' && !controller.signal.aborted) {
+        // Only show errors if not aborted and this is still the current request
+        if (error.name !== 'AbortError' && isCurrentRequest && !controller.signal.aborted) {
           console.error('Error loading data:', error);
-          showNotification('Failed to load blueprint or grid data', 'error');
+          
+          // Check if this is a 404 error for blueprint not found
+          if (error.response?.status === 404 && 
+              error.response?.data?.message === 'Blueprint not found' && 
+              (user?.loginType === 2 || user?.loginType === 3)) {
+            // This is a faculty or department admin, prompt them to create a blueprint
+            setNotification({
+              open: true,
+              message: 'No blueprint exists for this subject and CIE. Please create one to continue.',
+              type: 'info'
+            });
+            
+            // Reset existing data
+            setBlueprint(null);
+            setGridData(null);
+            
+            // Automatically open the create blueprint modal
+            setIsModalOpen(true);
+          } else {
+            // For other errors, show generic message
+            setNotification({
+              open: true,
+              message: 'Failed to load blueprint or grid data',
+              type: 'error'
+            });
+          }
         }
       }
     };
@@ -214,10 +277,11 @@ const InternalMarksPage: React.FC = () => {
     
     // Clean up function to cancel any pending requests when dependencies change or component unmounts
     return () => {
+      isCurrentRequest = false;
       controller.abort();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSubject, selectedCIE]);
+  }, [selectedSubject, selectedCIE]); // Only re-run when subject or CIE selection changes
 
   // Handlers
   const handleSubjectChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -395,18 +459,6 @@ const InternalMarksPage: React.FC = () => {
     }
   };
 
-  const showNotification = (message: string, type: AlertSeverity): void => {
-    setNotification({
-      open: true,
-      message,
-      type
-    });
-  };
-
-  const handleCloseNotification = (): void => {
-    setNotification((prev) => ({ ...prev, open: false }));
-  };
-
   // Handle Excel file selection
   const handleExcelFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     setExcelUploadError(null);
@@ -538,7 +590,7 @@ const InternalMarksPage: React.FC = () => {
                 variant="contained"
                 color="primary"
                 onClick={handleOpenModal}
-                disabled={!selectedSubject || !selectedCIE || loading || isFetchingSubjects}
+                disabled={!selectedSubject || !selectedCIE}
                 sx={{ flexGrow: { xs: 1, sm: 0 } }}
               >
                 {blueprint ? 'Edit Blueprint' : 'Create Blueprint'}

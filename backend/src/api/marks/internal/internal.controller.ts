@@ -16,10 +16,15 @@ const prisma = new PrismaClient();
  */
 export const createBlueprint = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Log the user object for debugging
+    console.log('createBlueprint controller - user object:', req.user);
+    
     const validatedData = blueprintSchema.parse(req.body);
-    const userId = req.user?.id;
+    // Fix: use userId from JWT payload (not id)
+    const userId = req.user?.userId;
     
     if (!userId) {
+      console.error('User ID not found in request. User object:', req.user);
       const response: ApiResponse = {
         success: false,
         message: 'User not authenticated',
@@ -97,9 +102,15 @@ export const updateBlueprint = async (req: Request, res: Response): Promise<void
   try {
     const blueprintId = Number(req.params.id);
     const validatedData = blueprintSchema.parse(req.body);
-    const userId = req.user?.id;
+    
+    // Log the user object for debugging
+    console.log('updateBlueprint controller - user object:', req.user);
+    
+    // Fix: use userId from JWT payload (not id)
+    const userId = req.user?.userId;
     
     if (!userId) {
+      console.error('User ID not found in request. User object:', req.user);
       const response: ApiResponse = {
         success: false,
         message: 'User not authenticated',
@@ -124,7 +135,10 @@ export const updateBlueprint = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    if (existingBlueprint.createdBy !== userId) {
+    // Only check creator if user is faculty (loginType 2)
+    // Skip this check for admins (loginType 1) and dept admins (loginType 3)
+    if (req.user?.loginType === 2 && existingBlueprint.createdBy !== userId) {
+      console.log('Permission check: blueprint.createdBy=', existingBlueprint.createdBy, 'userId=', userId);
       const response: ApiResponse = {
         success: false,
         message: 'You can only update blueprints created by you',
@@ -190,7 +204,13 @@ export const getGridData = async (req: Request, res: Response): Promise<void> =>
  */
 export const saveSingleMark = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Log the user object for debugging
+    console.log('saveSingleMark controller - user object:', req.user);
+    
     const validatedData = singleMarkEntrySchema.parse(req.body);
+    
+    // We could add permission checks here if needed
+    // const userId = req.user?.userId;
     
     const result = await internalService.saveSingleMark(
       validatedData.subqId, 
@@ -206,6 +226,7 @@ export const saveSingleMark = async (req: Request, res: Response): Promise<void>
     
     res.status(200).json(response);
   } catch (error: any) {
+    console.error('Error saving mark:', error);
     const response: ApiResponse = {
       success: false,
       message: error.message || 'Failed to save marks',
