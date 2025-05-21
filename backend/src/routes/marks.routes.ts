@@ -6,6 +6,7 @@ import {
   validate 
 } from '../utils/validation';
 import internalMarksRoutes from '../api/marks/internal/internal.routes';
+import reportRoutes from '../api/marks/report/report.routes';
 import { 
   createExamComponent, 
   getExamComponents, 
@@ -84,5 +85,8 @@ router.post(
 
 // Mount internal marks routes
 router.use('/internal', internalMarksRoutes);
+
+// Mount report routes
+router.use('/report', reportRoutes);
 
 export default router; 

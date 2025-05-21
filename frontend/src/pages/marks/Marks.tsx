@@ -21,6 +21,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 interface Subject {
   id: number;
@@ -206,6 +208,32 @@ const Marks: React.FC = () => {
           )}
           
           {/* Additional cards for Admins */}
+          {/* Marks View & Download Card - Available to all roles */}
+          <Grid item xs={12} sm={6} md={4}>
+            <Card variant="outlined">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <VisibilityIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Marks View & Download</Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  View CIE/IA marks with filtering options and export data in XLSX, CSV, or PDF formats.
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button 
+                  onClick={() => navigate('/marks/view')}
+                  variant="contained" 
+                  color="success"
+                  fullWidth
+                  startIcon={<FileDownloadIcon />}
+                >
+                  View & Download Marks
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          
           {isAdmin && (
             <Grid item xs={12} sm={6} md={4}>
               <Card variant="outlined">
@@ -285,6 +313,13 @@ const Marks: React.FC = () => {
                         onClick={() => navigate(`/marks/internal?subjectId=${subject.id}`)}
                       >
                         Internal
+                      </Button>
+                      <Button 
+                        size="small" 
+                        color="success"
+                        onClick={() => navigate(`/marks/view?subjectId=${subject.id}`)}
+                      >
+                        View
                       </Button>
                     </CardActions>
                   </Card>

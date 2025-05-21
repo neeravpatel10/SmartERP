@@ -1,0 +1,90 @@
+# Marks View & Download Module Design
+
+> **Scope:** Specification for the read‑only reporting layer that lets authorised users view CIE/IA marks already uploaded, inspect attendance, and export the data in XLSX/CSV/PDF formats.
+
+---
+
+## 1  Access Matrix
+
+| Role                 | Accessible Data Scope                    | Visible Columns                                      |
+| -------------------- | ---------------------------------------- | ---------------------------------------------------- |
+| **Faculty**          | Their own **subject × section** mappings | USN, Name, Sub‑Qs, Best A, Best B, Total, Attendance |
+| **Dept‑Admin / HOD** | All subjects in their **department**     | Same as faculty                                      |
+| **Super‑Admin**      | All departments                          | Same as faculty                                      |
+| **Student**          | Their **own records only**               | USN, Name, **Total**, Attendance                     |
+
+*Roles map to `login_type`: Super‑Admin = 1, Faculty = 2, Dept‑Admin = 3, Student = ‑1.*
+
+---
+
+## 2  Filter Hierarchy
+
+* **Faculty:** Subject selector limited to their mappings → **CIE #** (section auto‑locked).
+* **Dept‑Admin / HOD:** `Batch → Section → Subject → CIE #` (department fixed by login).
+* **Super‑Admin:** `Department → Batch → Section → Subject → CIE #`.
+* **Student:** No filters; page displays the latest three CIE cards.
+
+---
+
+## 3  Grid Layout
+
+* **Rendering:** Single virtual‑scroll grid (no server‑side paging) for smoother Excel‑like feel.
+* **Columns:** `USN | Name | 1a | 1b | … | 4b | Best Part A | Best Part B | Total | Attendance`.
+* **Conditional Formatting:** Totals below pass mark (default 40 %) are highlighted in red text/background.
+* **Sticky Headers:** Column headers remain visible while scrolling.
+* **Student View:** Hides all sub‑question columns; shows only totals + attendance.
+
+---
+
+## 4  Export Options
+
+* **Toolbar Buttons:** Download XLSX · Download CSV · Download PDF (A4 landscape).
+* **Scope of Export:** Entire dataset matching current filters—ignores client‑side viewport.
+* **XLSX Format:** Uses identical column order to the entry template so it can be re‑uploaded after edits.
+
+### 4.1  REST Endpoints
+
+| Method  | Endpoint                 | Query Params                                            | Description             |       |                                                                  |
+| ------- | ------------------------ | ------------------------------------------------------- | ----------------------- | ----- | ---------------------------------------------------------------- |
+| **GET** | `/marks/internal/report` | `subjectId, cieNo, sectionId?, batchId?, departmentId?` | Returns JSON grid data. |       |                                                                  |
+| **GET** | `/marks/internal/export` | same params + \`format=xlsx                             | csv                     | pdf\` | Streams a downloadable file (`Content‑Disposition: attachment`). |
+
+Both endpoints wrap payload/stream metadata in the standard ERP envelope:
+
+```json
+{
+  "success": true,
+  "message": "Data fetched successfully",
+  "data": { ... }
+}
+```
+
+---
+
+## 5  Security & Validation
+
+* **Section Restriction:** Faculty cannot fetch/export data for sections they’re not mapped to; server enforces with `faculty_subject_mapping` join.
+* **No Audit Log (v1):** Download tracking deferred; can be added later.
+
+---
+
+## 6  Front‑End Components
+
+* **ReportPage.tsx** – placed under `src/pages/[role]/marks/report`.
+* Reuses shared `DataGrid` with read‑only cells, conditional formatting, and export toolbar.
+* React Router guards decide which columns render per role.
+
+---
+
+## 7  Acceptance Criteria
+
+1. Four roles can load the grid; students see totals only.
+2. Virtual scroll handles 300+ rows smoothly.
+3. Totals below pass mark display red styling.
+4. Export buttons deliver valid XLSX/CSV/PDF files reflecting current filters.
+5. Faculty receive **403** when requesting non‑mapped sections.
+6. TypeScript strict mode passes with zero `any` in new code.
+
+---
+
+*End of document*

@@ -34,6 +34,7 @@ import Marks from './pages/marks/Marks';
 import Components from './pages/marks/Components';
 import SubjectComponents from './pages/marks/SubjectComponents';
 import InternalMarksPage from './pages/faculty/InternalMarksPage';
+import MarksView from './pages/MarksView';
 // import ExamComponent from './pages/marks/ExamComponent';
 import SubjectResults from './pages/results/SubjectResults';
 import StudentResults from './pages/results/StudentResults';
@@ -369,6 +370,7 @@ const App: React.FC = () => {
               <Route path="/marks/components/config/:componentId" element={<ProtectedRoute requiredRoles={[2]}><ComponentConfig /></ProtectedRoute>} />
               <Route path="/marks/entry/:sessionIdOrComponentId" element={<ProtectedRoute requiredRoles={[2]}><MarkEntry /></ProtectedRoute>} />
               <Route path="/marks/internal" element={<ProtectedRoute requiredRoles={[2, 3]}><InternalMarksPage /></ProtectedRoute>} />
+              <Route path="/marks/view" element={<ProtectedRoute><MarksView /></ProtectedRoute>} />
               <Route path="/results/subject/:subjectId" element={<SubjectResults />} />
               <Route path="/results/student/:usn" element={<StudentResults />} />
 
