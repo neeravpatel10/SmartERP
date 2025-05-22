@@ -315,3 +315,32 @@ export const getExcelTemplate = async (req: Request, res: Response): Promise<voi
     res.status(400).json(response);
   }
 };
+
+/**
+ * Get internal totals for students in a subject and CIE
+ */
+export const getInternalTotals = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { subjectId, cieNo } = internalBlueprintParams.parse(req.query);
+    
+    const totalsData = await internalService.getInternalTotals(
+      Number(subjectId), 
+      Number(cieNo)
+    );
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Internal totals retrieved successfully',
+      data: totalsData
+    };
+    
+    res.status(200).json(response);
+  } catch (error: any) {
+    const response: ApiResponse = {
+      success: false,
+      message: error.message || 'Failed to retrieve internal totals',
+      data: null
+    };
+    res.status(400).json(response);
+  }
+};

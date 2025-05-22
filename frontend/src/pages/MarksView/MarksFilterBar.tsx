@@ -249,7 +249,7 @@ const MarksFilterBar: React.FC<MarksFilterBarProps> = ({
     } finally {
       setLoading(prev => ({ ...prev, subjects: false }));
     }
-  }, [facultyId]);
+  }, [facultyId, departmentId]);
 
   // Load departments for super admin
   useEffect(() => {
@@ -394,7 +394,7 @@ const MarksFilterBar: React.FC<MarksFilterBarProps> = ({
                 value={filterParams.batchId || ''}
                 onChange={handleBatchChange}
                 label="Batch"
-                disabled={loading.batches || (isSuperAdmin && !filterParams.departmentId)}
+                disabled={loading.batches}
               >
                 {loading.batches ? (
                   <MenuItem value="">
@@ -421,7 +421,7 @@ const MarksFilterBar: React.FC<MarksFilterBarProps> = ({
                 value={filterParams.sectionId || ''}
                 onChange={handleSectionChange}
                 label="Section"
-                disabled={loading.sections || !filterParams.batchId}
+                disabled={loading.sections}
               >
                 {loading.sections ? (
                   <MenuItem value="">
@@ -447,9 +447,7 @@ const MarksFilterBar: React.FC<MarksFilterBarProps> = ({
               value={filterParams.subjectId || ''}
               onChange={handleSubjectChange}
               label="Subject"
-              disabled={loading.subjects || 
-                (isSuperAdmin && (!filterParams.departmentId || !filterParams.batchId || !filterParams.sectionId)) ||
-                (isDeptAdmin && (!filterParams.batchId || !filterParams.sectionId))}
+              disabled={loading.subjects}
               MenuProps={{
                 PaperProps: {
                   style: { maxHeight: 300 },

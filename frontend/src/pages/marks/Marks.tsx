@@ -16,13 +16,11 @@ import {
   CircularProgress,
   Divider
 } from '@mui/material';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import EditIcon from '@mui/icons-material/Edit';
-import SettingsIcon from '@mui/icons-material/Settings';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import QuizIcon from '@mui/icons-material/Quiz';
+import SummarizeIcon from '@mui/icons-material/Summarize';
 
 interface Subject {
   id: number;
@@ -80,8 +78,6 @@ const Marks: React.FC = () => {
 
   // Check if user is faculty
   const isFaculty = user?.loginType === 2 || user?.loginType === 3;
-  // Check if user is department admin or super admin
-  const isAdmin = user?.loginType === 1 || user?.loginType === 3;
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -105,110 +101,85 @@ const Marks: React.FC = () => {
         <Divider sx={{ mb: 3 }} />
         
         <Grid container spacing={3}>
-          {/* Mark Entry Card */}
+          {/* Internal Marks */}
           <Grid item xs={12} sm={6} md={4}>
             <Card variant="outlined">
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <EditIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Mark Entry</Typography>
+                  <AssignmentIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Internal Marks</Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
-                  Enter and manage marks for internal assessments, assignments, and lab components.
+                  Create blueprints and enter CIE/IA marks with the best-scoring question calculation.
                 </Typography>
               </CardContent>
               <CardActions>
                 <Button 
-                  onClick={() => navigate('/marks/entry')}
-                  variant="contained" 
+                  onClick={() => navigate('/marks/internal')}
+                  variant="contained"
+                  color="primary"
                   fullWidth
+                  startIcon={<AssignmentIcon />}
                 >
-                  Enter Marks
+                  Internal Marks
                 </Button>
               </CardActions>
             </Card>
           </Grid>
-          
-          {/* Components Card */}
+
+          {/* Assignment & Quiz Marks */}
           <Grid item xs={12} sm={6} md={4}>
             <Card variant="outlined">
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <SettingsIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Components</Typography>
+                  <QuizIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Assignment & Quiz</Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
-                  Configure exam components such as CIE structure, assignment weightages, and lab evaluations.
+                  Enter and manage marks for assignments, quizzes and seminars with Excel import/export.
                 </Typography>
               </CardContent>
               <CardActions>
                 <Button 
-                  onClick={() => navigate('/marks/components')}
-                  variant="outlined" 
+                  onClick={() => navigate('/marks/assignment-quiz')}
+                  variant="contained"
+                  color="secondary"
                   fullWidth
+                  startIcon={<QuizIcon />}
                 >
-                  Manage Components
+                  Assignment & Quiz
                 </Button>
               </CardActions>
             </Card>
           </Grid>
-          
-          {/* Results Card */}
+
+          {/* Overall Totals */}
           <Grid item xs={12} sm={6} md={4}>
             <Card variant="outlined">
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <AssessmentIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Results</Typography>
+                  <SummarizeIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Overall Totals</Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary">
-                  View and analyze student performance across subjects, semesters, and components.
+                  View combined totals of all components (CIE, assignments, quizzes, seminars).
                 </Typography>
               </CardContent>
               <CardActions>
                 <Button 
-                  onClick={() => navigate('/results')}
-                  variant="outlined" 
+                  onClick={() => navigate('/marks/overall-totals')}
+                  variant="contained"
+                  color="info"
                   fullWidth
+                  startIcon={<SummarizeIcon />}
                 >
-                  View Results
+                  Overall Totals
                 </Button>
               </CardActions>
             </Card>
           </Grid>
-          
-          {/* Internal Marks Card - For Faculty and Admins */}
-          {isFaculty && (
-            <Grid item xs={12} sm={6} md={4}>
-              <Card variant="outlined" sx={{ border: '2px solid #e3f2fd' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <AssignmentIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Internal Marks</Typography>
-                    <Box sx={{ ml: 'auto', backgroundColor: '#bbdefb', px: 1, py: 0.2, borderRadius: 1 }}>
-                      <Typography variant="caption" fontWeight="bold">New</Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Create blueprints and enter CIE/IA marks with the best-scoring question calculation.
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  <Button 
-                    onClick={() => navigate('/marks/internal')}
-                    variant="contained" 
-                    color="primary"
-                    fullWidth
-                  >
-                    Internal Marks
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          )}
-          
-          {/* Additional cards for Admins */}
-          {/* Marks View & Download Card - Available to all roles */}
+
+          {/* Marks View Card */}
           <Grid item xs={12} sm={6} md={4}>
             <Card variant="outlined">
               <CardContent>
@@ -233,31 +204,6 @@ const Marks: React.FC = () => {
               </CardActions>
             </Card>
           </Grid>
-          
-          {isAdmin && (
-            <Grid item xs={12} sm={6} md={4}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <CloudUploadIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6">Bulk Operations</Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Upload and manage marks in bulk for multiple subjects or components.
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  <Button 
-                    onClick={() => navigate('/marks/bulk')}
-                    variant="outlined" 
-                    fullWidth
-                  >
-                    Bulk Operations
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          )}
         </Grid>
       </Paper>
       
@@ -296,30 +242,30 @@ const Marks: React.FC = () => {
                     <CardActions>
                       <Button 
                         size="small" 
-                        onClick={() => navigate(`/marks/subjects/${subject.id}`)}
-                      >
-                        View Components
-                      </Button>
-                      <Button 
-                        size="small" 
                         color="primary"
-                        onClick={() => navigate(`/marks/entry?subject=${subject.id}`)}
+                        variant="contained"
+                        onClick={() => navigate(`/marks/internal?subjectId=${subject.id}`)}
+                        startIcon={<AssignmentIcon />}
                       >
-                        Enter Marks
+                        Internal Marks
                       </Button>
                       <Button 
                         size="small" 
                         color="secondary"
-                        onClick={() => navigate(`/marks/internal?subjectId=${subject.id}`)}
+                        variant="contained"
+                        onClick={() => navigate(`/marks/assignment-quiz?subjectId=${subject.id}`)}
+                        startIcon={<QuizIcon />}
                       >
-                        Internal
+                        Assignment & Quiz
                       </Button>
                       <Button 
                         size="small" 
                         color="success"
+                        variant="contained"
                         onClick={() => navigate(`/marks/view?subjectId=${subject.id}`)}
+                        startIcon={<VisibilityIcon />}
                       >
-                        View
+                        View & Download
                       </Button>
                     </CardActions>
                   </Card>

@@ -277,7 +277,7 @@ const StudentDetail: React.FC = () => {
           
           <Button
             component={Link}
-            to={`/students/${student.usn}/edit`}
+            to={`/students/edit/${student.usn}`}
             variant="contained"
             startIcon={<EditIcon />}
             color="primary"

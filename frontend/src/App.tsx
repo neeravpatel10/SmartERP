@@ -371,6 +371,16 @@ const App: React.FC = () => {
               <Route path="/marks/entry/:sessionIdOrComponentId" element={<ProtectedRoute requiredRoles={[2]}><MarkEntry /></ProtectedRoute>} />
               <Route path="/marks/internal" element={<ProtectedRoute requiredRoles={[2, 3]}><InternalMarksPage /></ProtectedRoute>} />
               <Route path="/marks/view" element={<ProtectedRoute><MarksView /></ProtectedRoute>} />
+              <Route path="/marks/assignment-quiz" element={<ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  {React.createElement(lazy(() => import('./pages/marks/AssignmentQuiz/AssignmentQuizPage')))}
+                </Suspense>
+              </ProtectedRoute>} />
+              <Route path="/marks/overall-totals" element={<ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                  {React.createElement(lazy(() => import('./pages/marks/AssignmentQuiz/OverallTotalsPage')))}
+                </Suspense>
+              </ProtectedRoute>} />
               <Route path="/results/subject/:subjectId" element={<SubjectResults />} />
               <Route path="/results/student/:usn" element={<StudentResults />} />
 

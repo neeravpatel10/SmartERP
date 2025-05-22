@@ -632,3 +632,53 @@ export const generateExcelTemplate = async (subjectId: number, cieNo: number): P
   
   return excelBuffer;
 };
+
+/**
+ * Get internal totals for students in a subject and CIE
+ */
+export const getInternalTotals = async (subjectId: number, cieNo: number) => {
+  try {
+    // Get all totals for the given subject and CIE from the StudentInternalTotals table
+    const totals = await prisma.studentInternalTotals.findMany({
+      where: {
+        subjectId,
+        cieNo
+      },
+      include: {
+        student: {
+          select: {
+            usn: true,
+            firstName: true,
+            lastName: true,
+            section: true,
+            semester: true,
+            departmentId: true
+          }
+        }
+      },
+      orderBy: {
+        studentUsn: 'asc'
+      }
+    });
+
+    // Format the response with student details
+    const formattedTotals = totals.map(total => ({
+      usn: total.studentUsn,
+      studentName: `${total.student.firstName} ${total.student.lastName || ''}`,
+      section: total.student.section,
+      semester: total.student.semester,
+      bestPartA: Number(total.bestPartA),
+      bestPartB: Number(total.bestPartB),
+      total: total.total
+    }));
+
+    return {
+      subjectId,
+      cieNo,
+      totals: formattedTotals
+    };
+  } catch (error) {
+    console.error('Error fetching internal totals:', error);
+    throw new Error('Failed to retrieve internal totals');
+  }
+};

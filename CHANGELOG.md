@@ -4,6 +4,18 @@ All notable changes to the AIET College ERP will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Assignment & Quiz Marks Module**: Complete implementation of non-CIE components management
+  - Added database schema with three new tables: `subject_component_config`, `student_component_marks`, and `student_overall_totals`
+  - Implemented new ComponentEnum for managing different types of components (Assignments, Quizzes, Seminars)
+  - Added REST API endpoints at `/marks/components/*` with proper role-based access control
+  - Created Excel template generation and upload functionality for component marks
+  - Implemented "Best of Assignment 1 & 2" scoring in overall totals calculation
+  - Built faculty-facing UI for component marks entry and management
+  - Added Overall Totals page to display combined marks from all components
+  - Implemented export functionality with proper permissions (disabled for students)
+
 ## [1.0.0] - 2025-05-20
 
 ### Added

@@ -224,22 +224,29 @@ const Dashboard: React.FC = () => {
                 {tabValue === 1 && (
                   <List>
                     {stats.recentMarks.length > 0 ? stats.recentMarks.map((entry: any, index: number) => (
-                      <React.Fragment key={entry.id}>
+                      <React.Fragment key={entry.id || index}>
                         <ListItem 
                           button 
                           component={RouterLink} 
-                          to={`/marks/components/${entry.componentId}`}
+                          to={`/faculty/internal-marks?subjectId=${entry.subjectId || entry.subject?.id}`}
                         >
                           <ListItemText 
-                            primary={`${entry.component.name} - ${entry.subject.code}`}
-                            secondary={`${new Date(entry.updatedAt).toLocaleDateString()} | Added by ${entry.faculty.name} | Avg: ${entry.averageMarks}/${entry.component.maxMarks}`}
+                            primary={`${entry.examType || 'Internal'} - ${entry.subject?.code || 'Subject'}`}
+                            secondary={`${new Date(entry.updatedAt || entry.date || Date.now()).toLocaleDateString()} | ${entry.faculty?.name || 'Faculty'} | ${entry.studentCount || ''} students`}
                           />
+                          {entry.averageMarks && (
+                            <Chip 
+                              label={`Avg: ${entry.averageMarks}/${entry.maxMarks || 30}`}
+                              color="primary"
+                              size="small"
+                            />
+                          )}
                         </ListItem>
                         {index < stats.recentMarks.length - 1 && <Divider />}
                       </React.Fragment>
                     )) : (
                       <Typography variant="body2" color="textSecondary" align="center">
-                        No recent mark entries
+                        No recent internal marks entries
                       </Typography>
                     )}
                   </List>

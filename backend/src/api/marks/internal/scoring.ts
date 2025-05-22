@@ -87,65 +87,47 @@ export async function calculateInternalTotals(
   const totalRaw = bestPartA + bestPartB;
   const total = Math.round(totalRaw);
 
-  // Store the calculated totals in a more accessible format for reporting
-  // We'll use a custom table or field in the future, but for now
-  // let's just log the results for debugging
-  console.log(`Total marks for student ${student.usn} in subject ${subjectId}, CIE ${cieNo}:`, {
-    bestPartA,
-    bestPartB,
-    total
-  });
-  
-  // Future implementation using Prisma models instead of raw SQL
-  /*
-  await tx.studentInternalTotals.upsert({
-    where: {
-      studentUsn_subjectId_cieNo: {
+  // Store the calculated totals in the StudentInternalTotals table for efficient retrieval
+  try {
+    // Convert JavaScript numbers to Prisma Decimal for proper type compatibility
+    const bestPartADecimal = new Prisma.Decimal(bestPartA);
+    const bestPartBDecimal = new Prisma.Decimal(bestPartB);
+    
+    // Using the unique constraint: studentUsn, subjectId, cieNo
+    await tx.studentInternalTotals.upsert({
+      where: {
+        student_subject_cie_unique: {
+          studentUsn: student.usn,
+          subjectId,
+          cieNo
+        }
+      },
+      update: {
+        bestPartA: bestPartADecimal, // Using Prisma.Decimal type for DB compatibility
+        bestPartB: bestPartBDecimal,
+        total,
+        updatedAt: new Date()
+      },
+      create: {
         studentUsn: student.usn,
-        subjectId: subjectId,
-        cieNo: cieNo
+        subjectId,
+        cieNo,
+        bestPartA: bestPartADecimal,
+        bestPartB: bestPartBDecimal,
+        total
       }
-    },
-    update: {
-      bestPartA: bestPartA,
-      bestPartB: bestPartB,
-      total: total
-    },
-    create: {
-      studentUsn: student.usn,
-      subjectId: subjectId,
-      cieNo: cieNo,
-      bestPartA: bestPartA,
-      bestPartB: bestPartB,
-      total: total
-    }
-  });
-  */
-  
-  /* Commented out because model doesn't exist in schema
-  await tx.studentinternaltotals.upsert({
-    where: {
-      studentId_subjectId_cieNo: {
-        studentId: studentId,
-        subjectId: subjectId,
-        cieNo: cieNo
-      }
-    },
-    update: {
-      bestPartA: Math.round(bestPartA), // Storing as integers for display consistency
-      bestPartB: Math.round(bestPartB),
-      total: total
-    },
-    create: {
-      studentId,
-      subjectId: subjectId,
-      cieNo: cieNo,
-      bestPartA: Math.round(bestPartA),
-      bestPartB: Math.round(bestPartB),
-      total: total
-    }
-  });
-  */
+    });
+
+    console.log(`Successfully saved internal totals for student ${student.usn} in subject ${subjectId}, CIE ${cieNo}:`, {
+      bestPartA,
+      bestPartB,
+      total
+    });
+  } catch (error) {
+    console.error(`Error saving internal totals for student ${student.usn}:`, error);
+    // Don't throw the error here - we want the function to continue even if saving fails
+    // This is important during the transition period where the table might not exist in all environments
+  }
 }
 
 /**

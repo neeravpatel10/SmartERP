@@ -6,7 +6,8 @@ import {
   getGridData, 
   saveSingleMark, 
   uploadMarks, 
-  getExcelTemplate 
+  getExcelTemplate,
+  getInternalTotals 
 } from './internal.controller';
 import { validate } from '../../../utils/validation';
 import { blueprintSchema, singleMarkEntrySchema, internalBlueprintParams } from './internal.validation';
@@ -231,6 +232,14 @@ router.get(
   authenticate,
   isFaculty,
   getExcelTemplate
+);
+
+// Endpoint for retrieving student internal totals
+router.get(
+  '/totals',
+  authenticate,
+  isFaculty,
+  getInternalTotals
 );
 
 export default router;

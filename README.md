@@ -22,7 +22,7 @@ This system supports real-time updates, Excel upload/download support, mobile-fi
 | Module          | Description |
 |----------------|-------------|
 | **Login & Role-Based Access** | JWT authentication, session handling, refresh tokens |
-| **Marks Entry** | IA/Assignments/Final split, Excel upload/download, component-wise upload, internal marks management |
+| **Marks Entry** | IA/Assignments/Final split, Excel upload/download, component-wise upload, internal marks management, assignment & quiz marks with overall totals |
 | **Attendance Tracking** | Session-based with lab support (3-period block), Excel-based upload |
 | **Faculty–Subject Mapping** | Multi-department, semester & section support with robust validation |
 | **Reports & Analytics** | Performance analysis at student, subject, and department level |
@@ -51,6 +51,7 @@ This system supports real-time updates, Excel upload/download support, mobile-fi
 |------------------|---------|---------|------------|-------------|
 | View Marks       | ✅ Own   | ✅ Assigned | ✅ Dept     | ✅ All       |
 | Upload Marks     | ❌      | ✅ Own     | ✅ Own     | ✅ All       |
+| Export Marks     | ❌      | ✅ Own     | ✅ Dept    | ✅ All       |
 | View Attendance  | ✅ Own   | ✅ Own     | ✅ Dept     | ✅ All       |
 | Upload Attendance| ❌      | ✅        | ✅          | ✅           |
 | Manage Users     | ❌      | ❌        | ✅ Dept     | ✅ All       |
@@ -65,6 +66,7 @@ This system supports real-time updates, Excel upload/download support, mobile-fi
 
 ## 🔄 Recent Improvements
 
+- **Assignment & Quiz Marks Module**: Complete system for managing non-CIE component marks including assignments, quizzes, and seminars with overall totals calculation
 - **Enhanced Student Profiles**: Comprehensive student data display including personal information, guardian details, and education history
 - **Faculty-Subject Mapping**: Fixed critical issues with the mapping table to prevent 400 errors by ensuring proper API parameter validation
 - **Department Selection**: Improved department dropdown for SuperAdmin users, ensuring proper loading and selection of departments

@@ -1,0 +1,5 @@
+# This is a manually recreated migration metadata file to match what's already in the database
+# Prisma needs this file to recognize the migration as valid
+
+migration_name = "20250424210000_add_section_relation_to_subject"
+checksum = "4c80a3ddd0e87c2c94271a3f5d8ca93b8ec7f2bdde7ff0c5cfb2b9e11e9e2b18"
