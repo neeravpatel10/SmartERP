@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from './store';
 import { getCurrentUser } from './store/slices/authSlice';
@@ -47,6 +47,7 @@ import UnlockAccount from './pages/admin/UnlockAccount';
 import UserList from './pages/admin/UserList';
 import UserRegistration from './pages/admin/UserRegistration';
 import UserProfileEdit from './pages/admin/UserProfileEdit';
+import ProfilePage from './pages/ProfilePage';
 
 // Subject routes
 import SubjectsPage from './pages/subjects/SubjectsPage';
@@ -78,15 +79,42 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
   const { isAuthenticated, loading } = useSelector((state: RootState) => state.auth);
   const { loginType } = useAuth(); // Use the enhanced AuthContext
+  const location = useLocation();
+  const currentPath = location.pathname;
   
-  if (loading) return <div>Loading...</div>;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  console.log('ProtectedRoute check:', { 
+    path: currentPath,
+    isAuthenticated, 
+    loginType, 
+    requiredRoles,
+    loading 
+  });
+  
+  if (loading) {
+    console.log('ProtectedRoute: Loading state, showing loading indicator');
+    return <div>Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    console.log('ProtectedRoute: Not authenticated, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Special handling for profile page - allow any authenticated user
+  if (currentPath === '/profile') {
+    console.log('ProtectedRoute: Profile page access granted to authenticated user');
+    return <>{children}</>;
+  }
   
   // If specific roles are required, check against loginType from AuthContext
-  if (requiredRoles && !requiredRoles.includes(loginType || -1)) {
+  if (requiredRoles && loginType !== undefined && loginType !== null && !requiredRoles.includes(loginType)) {
     console.log(`Access denied: Required roles [${requiredRoles.join(', ')}], user has loginType ${loginType}`);
+    console.log('Current pathname:', currentPath);
     return <Navigate to="/dashboard" replace />;
   }
+  
+  // Log successful access
+  console.log(`Access granted: User with loginType ${loginType} accessing route with required roles [${requiredRoles?.join(', ') || 'none'}]`);
   
   return <>{children}</>;
 };
@@ -219,12 +247,7 @@ const App: React.FC = () => {
                 )
               }
             />
-            <Route
-              path="/change-password"
-              element={
-                isAuthenticated ? <AuthLayout><ChangePassword /></AuthLayout> : <Navigate to="/login" replace />
-              }
-            />
+            {/* Change password route moved to protected routes section */}
 
             {/* Root route redirect */}
             <Route 
@@ -243,6 +266,18 @@ const App: React.FC = () => {
             {/* Protected Application Routes nested under ProtectedLayout */}
             <Route element={<ProtectedLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              
+              {/* Profile Routes - Single definition for all user types */}
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/change-password" element={
+                <ProtectedRoute>
+                  <ChangePassword />
+                </ProtectedRoute>
+              } />
               
               {/* Subject Management Routes */}
               <Route path="/subjects">
@@ -297,8 +332,8 @@ const App: React.FC = () => {
                 } />
               </Route>
 
-              {/* Student Profile Route - Only for students */}
-              <Route path="/profile" element={<ProtectedRoute requiredRoles={[-1]}><StudentProfile /></ProtectedRoute>} />
+              {/* Student Profile Route - Moved to student-specific profile path */}
+              <Route path="/student-profile" element={<ProtectedRoute requiredRoles={[-1]}><StudentProfile /></ProtectedRoute>} />
 
               {/* Faculty Management Routes */}
               <Route path="/faculty">
@@ -354,6 +389,23 @@ const App: React.FC = () => {
                   <FacultySubjectMappingPage />
                 </ProtectedRoute>
               } />
+              
+              {/* Faculty Routes */}
+              <Route path="/faculty" element={
+                <ProtectedRoute requiredRoles={[1, 3]}>
+                  <FacultyList />
+                </ProtectedRoute>
+              } />
+              <Route path="/faculty/edit/:id" element={
+                <ProtectedRoute requiredRoles={[1, 3]}>
+                  <FacultyForm mode="edit" />
+                </ProtectedRoute>
+              } />
+              <Route path="/faculty/add" element={
+                <ProtectedRoute requiredRoles={[1, 3]}>
+                  <FacultyForm mode="create" />
+                </ProtectedRoute>
+              } />
 
               {/* Attendance Routes */}
               <Route path="/attendance" element={<Attendance />} />
@@ -362,6 +414,8 @@ const App: React.FC = () => {
               <Route path="/attendance/sessions/:id" element={<AttendanceSession />} />
               <Route path="/attendance/alerts" element={<ProtectedRoute requiredRoles={[1, 2, 3]}><AttendanceAlertsPage /></ProtectedRoute>} />
               <Route path="/attendance/student/:usn" element={<StudentAttendance />} />
+
+              {/* Profile Routes already defined above */}
 
               {/* Marks & Results Routes */}
               <Route path="/marks" element={<Marks />} />

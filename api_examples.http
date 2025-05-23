@@ -1,0 +1,60 @@
+### API Examples for Profile Module
+
+### Get Current User Profile
+GET http://localhost:3000/api/me
+Authorization: Bearer {{auth_token}}
+
+### Update Current User Profile
+PUT http://localhost:3000/api/me
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "preferredName": "Johnny",
+  "phone": "9876543210",
+  "addressLine1": "123 Main Street",
+  "addressLine2": "Apt 4B",
+  "city": "Bangalore",
+  "state": "Karnataka",
+  "pincode": "560001"
+}
+
+### Admin: Get User Profile by ID
+GET http://localhost:3000/api/users/5/profile
+Authorization: Bearer {{auth_token}}
+
+### Admin: Update User Profile
+PUT http://localhost:3000/api/users/5
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "name": "Jane Smith",
+  "departmentId": 3,
+  "batch": "2022-26",
+  "section": "A",
+  "subjectsTaught": [101, 102, 103]
+}
+
+### Change Password
+POST http://localhost:3000/api/change-password
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "OldPassword123!",
+  "newPassword": "NewPassword456@"
+}
+
+### Upload Profile Picture
+POST http://localhost:3000/api/display-pic/upload
+Authorization: Bearer {{auth_token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="profile.jpg"
+Content-Type: image/jpeg
+
+< ./profile.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

@@ -72,19 +72,30 @@ const FacultyForm: React.FC<FacultyFormProps> = ({ mode }) => {
     const fetchFacultyData = async () => {
       if (mode === 'edit' && id) {
         setLoading(true);
+        console.log('Fetching faculty data for ID:', id);
         try {
+          // First check if the route is correctly receiving the ID
+          console.log('Edit mode detected, faculty ID:', id);
+          
           const response = await api.get(`/faculty/${id}`);
+          console.log('Faculty API response:', response.data);
+          
           if (response.data.success) {
             setFacultyData(response.data.data);
+            console.log('Faculty data loaded successfully');
           } else {
-            setError('Failed to fetch faculty data');
+            console.error('API returned error:', response.data);
+            setError('Failed to fetch faculty data: ' + (response.data.message || 'Unknown error'));
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error fetching faculty:', err);
-          setError('Error fetching faculty data');
+          setError('Error fetching faculty data: ' + (err.response?.data?.message || err.message || 'Unknown error'));
         } finally {
           setLoading(false);
         }
+      } else if (mode === 'edit' && !id) {
+        console.error('Edit mode specified but no ID was provided in the URL');
+        setError('No faculty ID provided');
       }
     };
 

@@ -3,12 +3,29 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { changePassword, resetError, updateUserFirstLogin } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
+import { 
+  Container, 
+  Box, 
+  TextField, 
+  Button, 
+  Grid, 
+  Alert, 
+  LinearProgress, 
+  Card,
+  CardContent,
+  CardHeader,
+  Divider
+} from '@mui/material';
+import { LockOutlined as LockIcon } from '@mui/icons-material';
+import { useToast } from '../../hooks/useToast';
 
 const ChangePassword: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [passwordChanged, setPasswordChanged] = useState(false);
+  const { showSuccess } = useToast();
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -17,9 +34,15 @@ const ChangePassword: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Redirect to dashboard if not first login or password was changed
+  // Only redirect to dashboard after password is changed or if it's a forced first login
   useEffect(() => {
-    if (user && (!user.firstLogin || passwordChanged)) {
+    // Check if this is a forced first login
+    const isForceFirstLoginChange = user?.firstLogin === true;
+    
+    // Only redirect in two cases:
+    // 1. If password was successfully changed
+    // 2. If this is NOT a forced first login but user explicitly navigated here
+    if (passwordChanged || (isForceFirstLoginChange && user)) {
       navigate('/dashboard');
     }
   }, [user, passwordChanged, navigate]);
@@ -54,6 +77,11 @@ const ChangePassword: React.FC = () => {
     // Clear API error when typing
     if (error) {
       dispatch(resetError());
+    }
+
+    // Update password strength when new password changes
+    if (name === 'newPassword') {
+      setPasswordStrength(calculatePasswordStrength(value));
     }
   };
 
@@ -118,117 +146,165 @@ const ChangePassword: React.FC = () => {
       );
       
       if (changePassword.fulfilled.match(resultAction)) {
+        showSuccess('Password updated successfully');
         // Update local state to trigger redirect
         setPasswordChanged(true);
         // Update user state
         dispatch(updateUserFirstLogin(false));
+        
+        // Set a timeout to redirect to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
       }
     } catch (err) {
       // Error handling is done in the reducer
     }
   };
 
+  // Function to calculate password strength
+  const calculatePasswordStrength = (password: string): number => {
+    if (!password) return 0;
+    
+    let strength = 0;
+    
+    // Length check
+    if (password.length >= 8) strength += 20;
+    
+    // Character type checks
+    if (/[A-Z]/.test(password)) strength += 20;
+    if (/[a-z]/.test(password)) strength += 20;
+    if (/[0-9]/.test(password)) strength += 20;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 20;
+    
+    return strength;
+  };
+
+  // Function to get color based on password strength
+  const getStrengthColor = (strength: number): string => {
+    if (strength < 40) return '#f44336'; // Red
+    if (strength < 70) return '#ff9800'; // Orange
+    return '#4caf50'; // Green
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Change Password
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Update your password for security
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div className="mb-4">
-              <label htmlFor="currentPassword" className="sr-only">
-                Current Password
-              </label>
-              <input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                value={formData.currentPassword}
-                onChange={handleChange}
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  formErrors.currentPassword ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder="Current Password"
-              />
-              {formErrors.currentPassword && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.currentPassword}</p>
-              )}
-            </div>
-            
-            <div className="mb-4">
-              <label htmlFor="newPassword" className="sr-only">
-                New Password
-              </label>
-              <input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                value={formData.newPassword}
-                onChange={handleChange}
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  formErrors.newPassword ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder="New Password"
-              />
-              {formErrors.newPassword && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.newPassword}</p>
-              )}
-            </div>
-            
-            <div className="mb-4">
-              <label htmlFor="confirmPassword" className="sr-only">
-                Confirm New Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  formErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder="Confirm New Password"
-              />
-              {formErrors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.confirmPassword}</p>
-              )}
-            </div>
-          </div>
-
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error</h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    <p>{error}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              {loading ? 'Changing Password...' : 'Change Password'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+      <Grid container spacing={3} justifyContent="center">
+        <Grid item xs={12} md={8}>
+          <Card elevation={3}>
+            <CardHeader 
+              title="Change Password" 
+              subheader="Update your password for enhanced security"
+              avatar={<LockIcon color="primary" />}
+              sx={{ 
+                bgcolor: 'primary.main', 
+                color: 'white',
+                '& .MuiCardHeader-subheader': {
+                  color: 'rgba(255, 255, 255, 0.8)'
+                }
+              }}
+            />
+            <Divider />
+            <CardContent>
+              <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="currentPassword"
+                  label="Current Password"
+                  type="password"
+                  id="currentPassword"
+                  autoComplete="current-password"
+                  value={formData.currentPassword}
+                  onChange={handleChange}
+                  error={!!formErrors.currentPassword}
+                  helperText={formErrors.currentPassword}
+                  disabled={loading}
+                />
+                
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="newPassword"
+                  label="New Password"
+                  type="password"
+                  id="newPassword"
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  error={!!formErrors.newPassword}
+                  helperText={formErrors.newPassword}
+                  disabled={loading}
+                />
+                
+                {formData.newPassword && (
+                  <Box sx={{ mt: 1, mb: 2 }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={passwordStrength}
+                      sx={{
+                        height: 8,
+                        borderRadius: 5,
+                        bgcolor: '#e0e0e0',
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: getStrengthColor(passwordStrength),
+                        },
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        mt: 0.5,
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      <span>Weak</span>
+                      <span>Medium</span>
+                      <span>Strong</span>
+                    </Box>
+                  </Box>
+                )}
+                
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="confirmPassword"
+                  label="Confirm New Password"
+                  type="password"
+                  id="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  error={!!formErrors.confirmPassword}
+                  helperText={formErrors.confirmPassword}
+                  disabled={loading}
+                />
+                
+                {error && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    {error}
+                  </Alert>
+                )}
+                
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  disabled={loading}
+                  sx={{ mt: 3, mb: 2 }}
+                >
+                  {loading ? 'Changing Password...' : 'Change Password'}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Container>
   );
 };
 
-export default ChangePassword; 
+export default ChangePassword;

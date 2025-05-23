@@ -191,13 +191,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 <Typography variant="body2">{user?.email}</Typography>
               </MenuItem>
               <Divider />
-              <MenuItem onClick={() => { handleClose(); navigate('/profile'); }}>
+              <MenuItem onClick={() => { handleClose(); window.location.href = '/profile'; }}>
                 <ListItemIcon>
                   <AccountCircleIcon fontSize="small" />
                 </ListItemIcon>
                 Profile
               </MenuItem>
-              <MenuItem onClick={() => { handleClose(); navigate('/change-password'); }}>
+              <MenuItem onClick={() => { handleClose(); window.location.href = '/change-password'; }}>
                 <ListItemIcon>
                   <SettingsIcon fontSize="small" />
                 </ListItemIcon>

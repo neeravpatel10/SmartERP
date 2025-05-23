@@ -191,31 +191,89 @@ export const getCurrentUser = async (req: Request, res: Response) => {
       });
     }
 
-    const user = await prisma.user.findUnique({
+    // First fetch the basic user data
+    const baseUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        loginType: true,
-        departmentId: true,
-        firstLogin: true,
-        department: true,
-        createdAt: true,
-        updatedAt: true
+      include: {
+        department: true
       }
     });
 
-    if (!user) {
+    if (!baseUser) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
 
+    // Prepare the response data
+    let userData: any = {
+      id: baseUser.id,
+      username: baseUser.username,
+      email: baseUser.email,
+      loginType: baseUser.loginType,
+      departmentId: baseUser.departmentId,
+      firstLogin: baseUser.firstLogin,
+      department: baseUser.department,
+      createdAt: baseUser.createdAt,
+      updatedAt: baseUser.updatedAt
+    };
+
+    // Fetch additional data based on user role
+    if (baseUser.loginType === -1) {
+      // Student - fetch student details
+      const studentData = await prisma.student.findUnique({
+        where: { userId: userId },
+        include: {
+          batch: true,
+          semester: true,
+          section: true
+        }
+      });
+
+      if (studentData) {
+        userData = {
+          ...userData,
+          student: studentData,
+          name: studentData.name || baseUser.username,
+          usn: studentData.usn,
+          gender: studentData.gender,
+          dateOfBirth: studentData.dateOfBirth,
+          phone: studentData.phone,
+          address: studentData.address,
+          batchName: studentData?.batch?.name,
+          semesterName: studentData?.semester?.name,
+          sectionName: studentData?.section?.name
+        };
+      }
+    } else if (baseUser.loginType === 2 || baseUser.loginType === 3) {
+      // Faculty or Dept Admin - fetch faculty details
+      const facultyData = await prisma.faculty.findUnique({
+        where: { userId: userId }
+      });
+
+      if (facultyData) {
+        userData = {
+          ...userData,
+          faculty: facultyData,
+          name: facultyData.name || baseUser.username,
+          gender: facultyData.gender,
+          dateOfBirth: facultyData.dateOfBirth,
+          phone: facultyData.phone,
+          address: facultyData.address,
+          designation: facultyData.designation,
+          qualification: facultyData.qualification,
+          joinDate: facultyData.joinDate,
+          experience: facultyData.experience
+        };
+      }
+    }
+
+    console.log('Fetched user data:', userData);
+
     res.json({
       success: true,
-      data: user
+      data: userData
     });
   } catch (error) {
     console.error('Get current user error:', error);
